@@ -4,18 +4,18 @@ import
 (
    "fmt" //to print errors
    "Leagly/config" //importing our config package which we have created above
+   "Leagly/query"
    "os"
-   "os/signal"
-   "strings"
    "syscall"
-   "log"
-   "io/ioutil"
-   "net/http"
+   "strings"
+   "os/signal"
    "github.com/bwmarrin/discordgo" //discordgo package from the repo of bwmarrin . 
 )
 
 var BotId string
 var goBot *discordgo.Session
+
+
 
 func ConnectToDiscord() {
 
@@ -43,14 +43,22 @@ func ConnectToDiscord() {
 
 
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
+
+	messageContent := m.Content
+	playerName := strings.Fields(messageContent)
+	fmt.Println(playerName, len(playerName)) 
+
 	// ignore messages from bot himself
 	if m.Author.ID == s.State.User.ID {
 		return
 	}
 
 	// !challengeBot - bot will always accept challenges
-	if m.Content == "!challengeBot" {
-		//handleChallengeBot(s, m)
+	if playerName[0] == "!lastmatch" {
+		if len([]rune(playerName[1])) > 0 {
+			fmt.Println(playerName[1])
+			query.GetLastMatch(s, m, playerName[1])
+		}
 		return
 	}
 
@@ -68,84 +76,27 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	// !httpPost
 	if m.Content == "!test2" {
-		testAPIPost(s, m)
+		query.TestAPIPost(s, m)
 		return
 	}
 
 	// !httpGet
 	if m.Content == "!test" {
-		testAPIGet(s, m)
+		query.TestAPIGet(s, m)
 		return
 	}
 
 	// !help
 	if m.Content == "!help" {
-		handleHelp(s, m)
+		query.HandleHelp(s, m)
 		return
 	}
 
 	// help as default
-	handleHelp(s, m)
-}
-
-//HTTP Get example
-func testAPIGet(s *discordgo.Session, m *discordgo.MessageCreate) {
-
-	resp, err := http.Get("https://na1.api.riotgames.com/lol/status/v4/platform-data?api_key=RGAPI-894ce659-63e9-44f8-8297-41a17f3d95cd")
-
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-	   log.Fatalln(err)
-	}
- 	//Convert the body to type string
-	sb := string(body)
-	log.Printf(sb)
-	s.ChannelMessageSend(m.ChannelID, sb)
-
+	query.HandleHelp(s, m)
 }
 
 
-//HTTP Post example
-func testAPIGet(s *discordgo.Session, m *discordgo.MessageCreate) {
-
-	postBody, _ := json.Marshal(map[string]string{
-		"name":  "Toby",
-		"email": "Toby@example.com",
-	 })
-	 responseBody := bytes.NewBuffer(postBody)
 
 
-	 responseBody := bytes.NewBuffer(postBody)
-	//Leverage Go's HTTP Post function to make request
-   resp, err := http.Post("https://postman-echo.com/post", "application/json", responseBody)
-	//Handle Error
-   if err != nil {
-      log.Fatalf("An Error Occured %v", err)
-   }
-   defer resp.Body.Close()
-	//Read the response body
-   body, err := ioutil.ReadAll(resp.Body)
-   if err != nil {
-      log.Fatalln(err)
-   }
-   sb := string(body)
-   log.Printf(sb)
 
-}
-
-
-func handleHelp(s *discordgo.Session, m *discordgo.MessageCreate) {
-	msg := "commands:\n"
-	msg = fmt.Sprintf("%s\t%s\n", msg, "!help - shows all available commands")
-	msg = fmt.Sprintf("%s\t%s\n", msg, "!challengeBot - bot will always accept challenges")
-	msg = fmt.Sprintf("%s\t%s\n", msg, "!challenges - shows all your open challenges")
-	msg = fmt.Sprintf("%s\t%s\n", msg, "!challenge <username> - challenge another user")
-	msg = fmt.Sprintf("%s\t%s\n", msg, "!accepct <username> - accept a challenge from another user")
-	msg = fmt.Sprintf("%s\t%s\n", msg, "!leaderboard - shows the leaderboard")
-
-	s.ChannelMessageSend(m.ChannelID, msg)
-}

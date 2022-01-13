@@ -1,4 +1,6 @@
 {
 	"Token"  : "OTMwOTI0MjgzNTk5OTI1MjYw.Yd88zA.csr5L_brtYMs8sgEuErNq3Lgu-U",
-	"BotPrefix" : "!"
+	"BotPrefix" : "!",
+	"Region" : "NA",
+	"ApiKey" : "?api_key=RGAPI-64d1fddc-0637-464b-8a26-d218c5a4284e"
 }

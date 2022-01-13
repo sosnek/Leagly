@@ -9,6 +9,8 @@ import (
 var (
 	Token     string //To store value of Token from config.json .
 	BotPrefix string // To store value of BotPrefix from config.json.
+	Region string
+	ApiKey string
 
 	config *configStruct //To store value extracted from config.json.
 )
@@ -16,6 +18,8 @@ var (
 type configStruct struct {
 	Token     string `json : "Token"`
 	BotPrefix string `json : "BotPrefix"`
+	Region string `json : "Region"`
+	ApiKey string `json : "ApiKey"`
 }
 
 func ReadConfig() error {
@@ -40,6 +44,8 @@ func ReadConfig() error {
 
 	Token = config.Token
 	BotPrefix = config.BotPrefix
+	Region = config.Region
+	ApiKey = config.ApiKey
 
 	return nil
 }
