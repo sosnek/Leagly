@@ -21,10 +21,76 @@ type Summoner struct {
 	SummonerLevel int
 }
 
+type Info struct {
+	GameDuration int
+	GameMode string
+	Participants Participants
+}
+
+type Participants struct {
+	Assists int
+	ChampionName string
+	TotalDamageDealtToChampions int
+	Deaths int
+	GameEndedInSurrender bool
+	Kills int
+	TotalMinionsKilled int
+	VisionScore int
+	Win bool
+
+}
+
+
+func GetLastMatch(s *discordgo.Session, m *discordgo.MessageCreate, playerName string) {
+	sb := GetAccountInfo(playerName)
+	//error checking here?
+
+	matchID := GetLastMatchID(sb.Puuid)
+	GetMatch(matchID)
+
+	s.ChannelMessageSend(m.ChannelID, playerName + " has an account level of: " + strconv.Itoa(sb.SummonerLevel))
+}
+
+
+func GetMatch(matchid string) {
+	resp, err := http.Get("https://americas.api.riotgames.com/lol/match/v5/matches/"+ matchid + "?api_key=" + config.ApiKey)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+	   log.Fatalln(err)
+	}
+
+	match := string(body)
+	fmt.Printf(match)
+}
+
+
+
+func GetLastMatchID(puuid string) string {
+	resp, err := http.Get("https://americas.api.riotgames.com/lol/match/v5/matches/by-puuid/" + puuid + "/ids?start=0&count=1&api_key=" + config.ApiKey)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+	   log.Fatalln(err)
+	}
+
+	var arr []string
+    _ = json.Unmarshal([]byte(body), &arr)
+fmt.Printf("\n")
+	fmt.Printf("Unmarshaled: %v", arr)
+	fmt.Printf("\n")
+	return arr[0]
+}
+
 
 func GetAccountInfo(playerName string) Summoner {
-	tmp := "https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/" + playerName + config.ApiKey
-	resp, err := http.Get(tmp)
+	resp, err := http.Get("https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/" + playerName + "?api_key=" + config.ApiKey)
 
 	if err != nil {
 		log.Fatalln(err)
@@ -44,14 +110,6 @@ func GetAccountInfo(playerName string) Summoner {
 
 	return summoner
 }
-
-
-func GetLastMatch(s *discordgo.Session, m *discordgo.MessageCreate, playerName string) {
-	sb := GetAccountInfo(playerName)
-	s.ChannelMessageSend(m.ChannelID, playerName + " has an account level of: " + strconv.Itoa(sb.SummonerLevel))
-}
-
-
 
 func HandleHelp(s *discordgo.Session, m *discordgo.MessageCreate) {
 	msg := "commands:\n"
