@@ -1,21 +1,19 @@
 package bot
 
-import 
-(
-   "fmt" //to print errors
-   "Leagly/config" //importing our config package which we have created above
-   "Leagly/query"
-   "os"
-   "syscall"
-   "strings"
-   "os/signal"
-   "github.com/bwmarrin/discordgo" //discordgo package from the repo of bwmarrin . 
+import (
+	"Leagly/config" //importing our config package which we have created above
+	"Leagly/query"
+	"fmt" //to print errors
+	"os"
+	"os/signal"
+	"strings"
+	"syscall"
+
+	"github.com/bwmarrin/discordgo" //discordgo package from the repo of bwmarrin .
 )
 
 var BotId string
 var goBot *discordgo.Session
-
-
 
 func ConnectToDiscord() {
 
@@ -41,23 +39,30 @@ func ConnectToDiscord() {
 	leaglyBot.Close()
 }
 
-
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	messageContent := m.Content
 	playerName := strings.Fields(messageContent)
-	fmt.Println(playerName, len(playerName)) 
+	fmt.Println(playerName, len(playerName))
 
 	// ignore messages from bot himself
 	if m.Author.ID == s.State.User.ID {
 		return
 	}
 
-	// !challengeBot - bot will always accept challenges
+	// !lastmatch - Searches and displays stats from last league game played
 	if playerName[0] == "!lastmatch" {
+		if validateName(playerName[1]) {
+			s.ChannelMessageSend(m.ChannelID, query.GetLastMatch(playerName[1]))
+		}
+		return
+	}
+
+	// !live - checks if player is currently in a game
+	if m.Content == "!live" {
 		if len([]rune(playerName[1])) > 0 {
 			fmt.Println(playerName[1])
-			query.GetLastMatch(s, m, playerName[1])
+			s.ChannelMessageSend(m.ChannelID, query.IsInGame(playerName[1]))
 		}
 		return
 	}
@@ -74,18 +79,6 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	// !httpPost
-	if m.Content == "!test2" {
-		query.TestAPIPost(s, m)
-		return
-	}
-
-	// !httpGet
-	if m.Content == "!test" {
-		query.TestAPIGet(s, m)
-		return
-	}
-
 	// !help
 	if m.Content == "!help" {
 		query.HandleHelp(s, m)
@@ -96,7 +89,9 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	query.HandleHelp(s, m)
 }
 
-
-
-
-
+func validateName(name string) bool {
+	if len([]rune(name)) > 0 {
+		return true
+	}
+	return false
+}
