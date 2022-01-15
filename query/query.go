@@ -8,12 +8,12 @@ import (
 	"log"
 	"net/http"
 	"strconv"
-
-	"github.com/bwmarrin/discordgo" //discordgo package from the repo of bwmarrin .
+	"time"
+	//discordgo package from the repo of bwmarrin .
 )
 
 type Summoner struct {
-	Id            string
+	Id            string //summoner ID
 	AccountId     string
 	Puuid         string
 	Name          string
@@ -46,6 +46,19 @@ type Participants struct {
 	SummonerName                string
 }
 
+type LiveGameInfo struct {
+	GameStartTime int64 //might be useless. TODO: use gamestart time instead
+	GameMode      string
+	GameType      string
+	MapId         int
+	Status        Status
+}
+
+type Status struct {
+	Message     string
+	Status_code int
+}
+
 func GetLastMatch(playerName string) (result string) {
 	accInfo := getAccountInfo(playerName)
 	//error checking here?
@@ -66,14 +79,24 @@ func GetLastMatch(playerName string) (result string) {
 func IsInGame(playerName string) (result string) {
 
 	accInfo := getAccountInfo(playerName)
-	getLiveGame(accInfo.Id)
+	liveGameInfo := getLiveGame(accInfo.Id)
+
+	if liveGameInfo.Status.Status_code == 0 {
+		getTime := time.Now().UTC()
+		elapsed := getTime.Sub(time.Unix(int64((liveGameInfo.GameStartTime / 1000)), 0).UTC())
+
+		minutes := int(elapsed.Seconds()) / 60
+		seconds := int(elapsed.Seconds()) % 60
+		return fmt.Sprintf(playerName+" is currently in a game. Game time: %02d:%02d", minutes, seconds)
+	}
+	return playerName + " is not currently in-game."
 }
 
 ///
 ///
 ///
 
-func getLiveGame(summID string) {
+func getLiveGame(summID string) LiveGameInfo {
 	resp, err := http.Get("https://na1.api.riotgames.com/lol/spectator/v4/active-games/by-summoner/" + summID + "?api_key=" + config.ApiKey)
 	if err != nil {
 		log.Fatalln(err)
@@ -85,6 +108,11 @@ func getLiveGame(summID string) {
 	}
 
 	liveGame := string(body)
+
+	var liveGameInfo LiveGameInfo
+	json.Unmarshal([]byte(liveGame), &liveGameInfo)
+
+	return liveGameInfo
 }
 
 func getMatch(matchid string) MatchResults {
@@ -167,7 +195,7 @@ func formatLastMatchResponse(puuid string, matchResults MatchResults) (matchResu
 		"\nGame type: " + matchResults.Info.GameMode +
 		"\nGame duration: " + strconv.Itoa(minutes) + ":" + strconv.Itoa(seconds) +
 		"\nChampion: " + mySummonerStats.ChampionName +
-		"\nRole:" + mySummonerStats.IndividualPosition +
+		"\nRole: " + mySummonerStats.IndividualPosition +
 		"\nKills: " + strconv.Itoa(mySummonerStats.Kills) +
 		"\nDeaths: " + strconv.Itoa(mySummonerStats.Deaths) +
 		"\nAssists: " + strconv.Itoa(mySummonerStats.Assists) +
@@ -187,16 +215,4 @@ func parseParticipant(puuid string, matchresults MatchResults) Participants {
 		}
 	}
 	return matchresults.Info.Participants[i]
-}
-
-func HandleHelp(s *discordgo.Session, m *discordgo.MessageCreate) {
-	msg := "commands:\n"
-	msg = fmt.Sprintf("%s\t%s\n", msg, "!help - shows all available commands")
-	msg = fmt.Sprintf("%s\t%s\n", msg, "!challengeBot - bot will always accept challenges")
-	msg = fmt.Sprintf("%s\t%s\n", msg, "!challenges - shows all your open challenges")
-	msg = fmt.Sprintf("%s\t%s\n", msg, "!challenge <username> - challenge another user")
-	msg = fmt.Sprintf("%s\t%s\n", msg, "!accepct <username> - accept a challenge from another user")
-	msg = fmt.Sprintf("%s\t%s\n", msg, "!leaderboard - shows the leaderboard")
-
-	s.ChannelMessageSend(m.ChannelID, msg)
 }

@@ -31,7 +31,7 @@ func ConnectToDiscord() {
 		panic(err)
 	}
 
-	fmt.Println("Bot is now running")
+	fmt.Println("Leagly is now running")
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc
@@ -59,39 +59,35 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	// !live - checks if player is currently in a game
-	if m.Content == "!live" {
-		if len([]rune(playerName[1])) > 0 {
-			fmt.Println(playerName[1])
+	if playerName[0] == "!live" {
+		if validateName(playerName[1]) {
 			s.ChannelMessageSend(m.ChannelID, query.IsInGame(playerName[1]))
 		}
 		return
 	}
 
-	// !challenge <username>
-	if strings.HasPrefix(m.Content, "!challenge") && len(strings.Split(m.Content, " ")) == 2 {
-		//handleChallenge(s, m)
-		return
-	}
-
-	// !accepct <username>
-	if strings.HasPrefix(m.Content, "!accept") && len(strings.Split(m.Content, " ")) == 2 {
-		//handleAcceptChallenge(s, m)
-		return
-	}
-
 	// !help
 	if m.Content == "!help" {
-		query.HandleHelp(s, m)
+		handleHelp(s, m)
 		return
 	}
 
 	// help as default
-	query.HandleHelp(s, m)
+	handleHelp(s, m)
 }
 
 func validateName(name string) bool {
-	if len([]rune(name)) > 0 {
-		return true
-	}
-	return false
+	return len([]rune(name)) > 0
+}
+
+func handleHelp(s *discordgo.Session, m *discordgo.MessageCreate) {
+	msg := "commands:\n"
+	msg = fmt.Sprintf("%s\t%s\n", msg, "!help - shows all available commands")
+	msg = fmt.Sprintf("%s\t%s\n", msg, "!challengeBot - bot will always accept challenges")
+	msg = fmt.Sprintf("%s\t%s\n", msg, "!challenges - shows all your open challenges")
+	msg = fmt.Sprintf("%s\t%s\n", msg, "!challenge <username> - challenge another user")
+	msg = fmt.Sprintf("%s\t%s\n", msg, "!accepct <username> - accept a challenge from another user")
+	msg = fmt.Sprintf("%s\t%s\n", msg, "!leaderboard - shows the leaderboard")
+
+	s.ChannelMessageSend(m.ChannelID, msg)
 }
