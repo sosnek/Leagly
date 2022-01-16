@@ -59,42 +59,82 @@ type Status struct {
 	Status_code int
 }
 
+type RankedInfo []struct {
+	LeagueID     string
+	QueueType    string
+	Tier         string
+	Rank         string
+	SummonerName string
+	LeaguePoints int
+	Wins         int
+	Losses       int
+}
+
 func GetLastMatch(playerName string) (result string) {
-	accInfo := getAccountInfo(playerName)
+	accInfo, exists := getAccountInfo(playerName)
 	//error checking here?
 
-	matchID, exists := getLastMatchID(accInfo.Puuid)
 	if exists {
-		matchresults := getMatch(matchID)
-		lastMatchResultsFormatted := formatLastMatchResponse(accInfo.Puuid, matchresults)
-
-		return lastMatchResultsFormatted
-	} else {
+		matchID, exist := getLastMatchID(accInfo.Puuid)
+		if exist {
+			matchresults := getMatch(matchID)
+			lastMatchResultsFormatted := formatLastMatchResponse(accInfo.Puuid, matchresults)
+			return lastMatchResultsFormatted
+		}
 		log.Println("Unable to get matchID for: " + playerName)
-		return "Sorry, something went wrong"
 	}
-
+	return "Sorry, something went wrong"
 }
 
 func IsInGame(playerName string) (result string) {
+	accInfo, exists := getAccountInfo(playerName)
 
-	accInfo := getAccountInfo(playerName)
-	liveGameInfo := getLiveGame(accInfo.Id)
+	if exists {
+		liveGameInfo := getLiveGame(accInfo.Id)
 
-	if liveGameInfo.Status.Status_code == 0 {
-		getTime := time.Now().UTC()
-		elapsed := getTime.Sub(time.Unix(int64((liveGameInfo.GameStartTime / 1000)), 0).UTC())
-
-		minutes := int(elapsed.Seconds()) / 60
-		seconds := int(elapsed.Seconds()) % 60
-		return fmt.Sprintf(playerName+" is currently in a game. Game time: %02d:%02d", minutes, seconds)
+		if liveGameInfo.Status.Status_code == 0 {
+			getTime := time.Now().UTC()
+			elapsed := getTime.Sub(time.Unix(int64((liveGameInfo.GameStartTime / 1000)), 0).UTC())
+			return fmt.Sprintf(playerName+" is currently in a game. Game time: %02d:%02d", (int(elapsed.Seconds()) / 60), (int(elapsed.Seconds()) % 60))
+		}
+		return playerName + " is not currently in-game."
 	}
-	return playerName + " is not currently in-game."
+	return "Sorry, something went wrong"
+}
+
+func LookupPlayer(playerName string) (result string) {
+	accInfo, exists := getAccountInfo(playerName)
+	if exists {
+		rankedStats := getRankedStats(accInfo.Id)
+		return fmt.Sprintf(rankedStats[0].Tier + rankedStats[0].Rank)
+	}
+
+	log.Println("Unable to get accInfo for: " + playerName)
+	return "Sorry, something went wrong"
 }
 
 ///
 ///
 ///
+
+func getRankedStats(accID string) RankedInfo {
+	resp, err := http.Get("https://na1.api.riotgames.com/lol/league/v4/entries/by-summoner/" + accID + "?api_key=" + config.ApiKey)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	rankedStats := string(body)
+
+	var rankedInfo RankedInfo
+	json.Unmarshal([]byte(rankedStats), &rankedInfo)
+
+	return rankedInfo
+}
 
 func getLiveGame(summID string) LiveGameInfo {
 	resp, err := http.Get("https://na1.api.riotgames.com/lol/spectator/v4/active-games/by-summoner/" + summID + "?api_key=" + config.ApiKey)
@@ -153,24 +193,26 @@ func getLastMatchID(puuid string) (matchID string, exists bool) {
 	return arr[0], true
 }
 
-func getAccountInfo(playerName string) Summoner {
+func getAccountInfo(playerName string) (summoner Summoner, exists bool) {
 	resp, err := http.Get("https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/" + playerName + "?api_key=" + config.ApiKey)
 
 	if err != nil {
 		log.Fatalln(err)
+		return summoner, false
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Fatalln(err)
+		return summoner, false
 	}
 	//Convert the body to type string
 	sb := string(body)
 
-	var summoner Summoner
-	json.Unmarshal([]byte(sb), &summoner)
+	var sum Summoner
+	json.Unmarshal([]byte(sb), &sum)
 
-	return summoner
+	return sum, true
 }
 
 func formatLastMatchResponse(puuid string, matchResults MatchResults) (matchResultsFormatted string) {
@@ -193,7 +235,7 @@ func formatLastMatchResponse(puuid string, matchResults MatchResults) (matchResu
 
 	resultsFormatted := mySummonerStats.SummonerName + "'s last game consists of the following stats:" +
 		"\nGame type: " + matchResults.Info.GameMode +
-		"\nGame duration: " + strconv.Itoa(minutes) + ":" + strconv.Itoa(seconds) +
+		"\nGame duration: %02d" + strconv.Itoa(minutes) + "%02d:" + strconv.Itoa(seconds) +
 		"\nChampion: " + mySummonerStats.ChampionName +
 		"\nRole: " + mySummonerStats.IndividualPosition +
 		"\nKills: " + strconv.Itoa(mySummonerStats.Kills) +

@@ -66,6 +66,14 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
+	//lookup
+	if playerName[0] == "!lookup" {
+		if validateName(playerName[1]) {
+			s.ChannelMessageSend(m.ChannelID, query.LookupPlayer(playerName[1]))
+		}
+		return
+	}
+
 	// !help
 	if m.Content == "!help" {
 		handleHelp(s, m)
