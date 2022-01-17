@@ -3,13 +3,12 @@ package query
 import (
 	"Leagly/config"
 	"encoding/json"
-	"fmt" //to print errors
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"strconv"
 	"time"
-	//discordgo package from the repo of bwmarrin .
 )
 
 type Summoner struct {
@@ -48,7 +47,7 @@ type Participants struct {
 }
 
 type LiveGameInfo struct {
-	GameStartTime int64 //might be useless. TODO: use gamestart time instead
+	GameStartTime int64
 	GameMode      string
 	GameType      string
 	MapId         int
@@ -71,6 +70,14 @@ type RankedInfo []struct {
 	Losses       int
 }
 
+type Mastery []struct {
+	ChampionID     int
+	ChampionLevel  int
+	ChampionPoints int
+	LastPlayTime   int64
+}
+
+//!lastmatch name
 func GetLastMatch(playerName string) (result string) {
 
 	accInfo, exists := getAccountInfo(playerName)
@@ -85,6 +92,7 @@ func GetLastMatch(playerName string) (result string) {
 	return "Sorry, something went wrong"
 }
 
+//!live name
 func IsInGame(playerName string) (result string) {
 
 	accInfo, exists := getAccountInfo(playerName)
@@ -101,12 +109,14 @@ func IsInGame(playerName string) (result string) {
 	return "Sorry, something went wrong"
 }
 
+//!lookup name
 func LookupPlayer(playerName string) (result string) {
 
 	accInfo, exists := getAccountInfo(playerName)
 	if exists {
 		rankedStats := getRankedStats(accInfo.Id)
-		//TODO: GET MASTERY DATA AS WELL
+		masteryStats := getMasteryData(accInfo.Id)
+		fmt.Println(masteryStats[0].ChampionID)
 		return formatPlayerRankedStats(rankedStats)
 	}
 	log.Println("Unable to get accInfo for: " + playerName)
@@ -116,6 +126,25 @@ func LookupPlayer(playerName string) (result string) {
 ///
 ///
 ///
+
+func getMasteryData(accID string) Mastery {
+	resp, err := http.Get("https://na1.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-summoner/" + accID + "?api_key=" + config.ApiKey)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	masteryStats := string(body)
+
+	var mastery Mastery
+	json.Unmarshal([]byte(masteryStats), &mastery)
+
+	return mastery
+}
 
 func getRankedStats(accID string) RankedInfo {
 	resp, err := http.Get("https://na1.api.riotgames.com/lol/league/v4/entries/by-summoner/" + accID + "?api_key=" + config.ApiKey)
