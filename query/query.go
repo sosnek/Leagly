@@ -77,14 +77,14 @@ type Mastery []struct {
 	LastPlayTime   int64
 }
 
-//!lastmatch name
+//!lastmatch player
 func GetLastMatch(playerName string) (result string) {
 
 	accInfo, exists := getAccountInfo(playerName)
 	if exists {
-		matchID, exist := getLastMatchID(accInfo.Puuid)
+		matchID, exist := getMatchID(accInfo.Puuid, 1)
 		if exist {
-			matchresults := getMatch(matchID)
+			matchresults := getMatch(matchID[0])
 			return formatLastMatchResponse(accInfo.Puuid, matchresults)
 		}
 		log.Println("Unable to get matchID for: " + playerName)
@@ -92,7 +92,7 @@ func GetLastMatch(playerName string) (result string) {
 	return "Sorry, something went wrong"
 }
 
-//!live name
+//!live player
 func IsInGame(playerName string) (result string) {
 
 	accInfo, exists := getAccountInfo(playerName)
@@ -109,13 +109,19 @@ func IsInGame(playerName string) (result string) {
 	return "Sorry, something went wrong"
 }
 
-//!lookup name
+//!lookup player
 func LookupPlayer(playerName string) (result string) {
 
 	accInfo, exists := getAccountInfo(playerName)
 	if exists {
 		rankedStats := getRankedStats(accInfo.Id)
 		masteryStats := getMasteryData(accInfo.Id)
+		matchStatsID := getMatchID(accInfo.Puuid, 30)
+		var matchStatsSlice []MatchResults
+		for n := 0; n < 30; n++ {
+			matchStatsSlice = append(matchStatsSlice, getMatch(matchStatsID[n]))
+		}
+		//matchStats := get
 		fmt.Println(masteryStats[0].ChampionID)
 		return formatPlayerRankedStats(rankedStats)
 	}
@@ -203,8 +209,8 @@ func getMatch(matchid string) MatchResults {
 	return matchresults
 }
 
-func getLastMatchID(puuid string) (matchID string, exists bool) {
-	resp, err := http.Get("https://americas.api.riotgames.com/lol/match/v5/matches/by-puuid/" + puuid + "/ids?start=0&count=1&api_key=" + config.ApiKey)
+func getMatchID(puuid string, count int) ([]string, bool) {
+	resp, err := http.Get("https://americas.api.riotgames.com/lol/match/v5/matches/by-puuid/" + puuid + "/ids?start=0&count=" + (strconv.Itoa(count)) + "&api_key=" + config.ApiKey)
 	if err != nil {
 		log.Fatalln(err)
 	}
@@ -217,9 +223,9 @@ func getLastMatchID(puuid string) (matchID string, exists bool) {
 	var arr []string
 	_ = json.Unmarshal([]byte(body), &arr)
 	if len(arr) == 0 {
-		return " ", false
+		return arr, false
 	}
-	return arr[0], true
+	return arr, true
 }
 
 func getAccountInfo(playerName string) (summoner Summoner, exists bool) {
