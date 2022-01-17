@@ -20,14 +20,14 @@ type Summoner struct {
 }
 
 type MatchResults struct {
-	Metadata string
-	Info     GameInfo
+	Info GameInfo
 }
 
 type GameInfo struct {
 	GameDuration int
 	GameMode     string
 	GameCreation int64
+	QueueId      int
 	Participants []Participants
 }
 
@@ -77,6 +77,9 @@ type Mastery []struct {
 	LastPlayTime   int64
 }
 
+const RANKED_SOLO = 420
+const RANKED_FLEX = 440
+
 //!lastmatch player
 func GetLastMatch(playerName string) (result string) {
 
@@ -115,15 +118,17 @@ func LookupPlayer(playerName string) (result string) {
 	accInfo, exists := getAccountInfo(playerName)
 	if exists {
 		rankedStats := getRankedStats(accInfo.Id)
-		masteryStats := getMasteryData(accInfo.Id)
-		matchStatsID := getMatchID(accInfo.Puuid, 30)
-		var matchStatsSlice []MatchResults
-		for n := 0; n < 30; n++ {
-			matchStatsSlice = append(matchStatsSlice, getMatch(matchStatsID[n]))
+		//masteryStats := getMasteryData(accInfo.Id)
+		matchStatsID, exist := getMatchID(accInfo.Puuid, 10)
+		if exist {
+			var matchStatsSlice []MatchResults
+			for n := 0; n < len(matchStatsID); n++ {
+				matchStatsSlice = append(matchStatsSlice, getMatch(matchStatsID[n]))
+			}
+			matchStatsFormatted := formatMatchStats(matchStatsSlice, accInfo.Puuid)
+			tmp := formatPlayerRankedStats(rankedStats)
+			return (tmp + matchStatsFormatted)
 		}
-		//matchStats := get
-		fmt.Println(masteryStats[0].ChampionID)
-		return formatPlayerRankedStats(rankedStats)
 	}
 	log.Println("Unable to get accInfo for: " + playerName)
 	return "Sorry, something went wrong"
@@ -248,12 +253,49 @@ func getAccountInfo(playerName string) (summoner Summoner, exists bool) {
 	json.Unmarshal([]byte(sb), &sum)
 
 	return sum, true
+
+}
+
+func formatMasteries(masteryStats []Mastery) string {
+
+	
+}
+
+//TODO:
+
+//champion win/loss ratio of last 10 games
+//champion % played
+//champion total KDA of last 10 games
+//total KDA of last 10 games
+// win % of last 10 games
+// role ratio
+// using matchStats.Info.Queuetype, only use FLex and solo/duo games
+func formatMatchStats(matchedStats []MatchResults, puuid string) string {
+	var retString string
+	//var playerStats []Participants
+	var wins int
+	var loss int
+
+	for n := 0; n < len(matchedStats); n++ {
+		participant := parseParticipant(puuid, matchedStats[n])
+		if participant.Puuid == puuid {
+			//playerStats[n].ChampionName = append(playerStats[n].ChampionName, participant.ChampionName)
+			if participant.Win {
+				wins++
+			} else {
+				loss++
+			}
+			break
+		}
+	}
+	//after this is done we should have an array of type Participant that holds stats from the last 10 ranked games they played
+	return retString
 }
 
 func formatPlayerRankedStats(rankedStats RankedInfo) (formattedRanked string) {
 	var rankedResults string
 	for n := 0; n < len(rankedStats); n++ {
-		if rankedStats[n].QueueType == "RANKED_SOLO_5x5" {
+		if rankedStats[n].QueueType == "RANKED_SOLO_5x5" { // or RANKED_TEAM_5x5 ?
 			if rankedStats[n].Tier == "" && rankedStats[n].Rank == "" {
 				return rankedStats[n].SummonerName + " is currently unranked with " + strconv.Itoa(rankedStats[n].Wins) + " wins and " + strconv.Itoa(rankedStats[n].Losses) + " losses."
 			}
