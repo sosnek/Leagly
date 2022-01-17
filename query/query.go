@@ -28,6 +28,7 @@ type MatchResults struct {
 type GameInfo struct {
 	GameDuration int
 	GameMode     string
+	GameCreation int64
 	Participants []Participants
 }
 
@@ -71,15 +72,13 @@ type RankedInfo []struct {
 }
 
 func GetLastMatch(playerName string) (result string) {
-	accInfo, exists := getAccountInfo(playerName)
-	//error checking here?
 
+	accInfo, exists := getAccountInfo(playerName)
 	if exists {
 		matchID, exist := getLastMatchID(accInfo.Puuid)
 		if exist {
 			matchresults := getMatch(matchID)
-			lastMatchResultsFormatted := formatLastMatchResponse(accInfo.Puuid, matchresults)
-			return lastMatchResultsFormatted
+			return formatLastMatchResponse(accInfo.Puuid, matchresults)
 		}
 		log.Println("Unable to get matchID for: " + playerName)
 	}
@@ -87,11 +86,11 @@ func GetLastMatch(playerName string) (result string) {
 }
 
 func IsInGame(playerName string) (result string) {
+
 	accInfo, exists := getAccountInfo(playerName)
 
 	if exists {
 		liveGameInfo := getLiveGame(accInfo.Id)
-
 		if liveGameInfo.Status.Status_code == 0 {
 			getTime := time.Now().UTC()
 			elapsed := getTime.Sub(time.Unix(int64((liveGameInfo.GameStartTime / 1000)), 0).UTC())
@@ -103,12 +102,13 @@ func IsInGame(playerName string) (result string) {
 }
 
 func LookupPlayer(playerName string) (result string) {
+
 	accInfo, exists := getAccountInfo(playerName)
 	if exists {
 		rankedStats := getRankedStats(accInfo.Id)
-		return fmt.Sprintf(rankedStats[0].Tier + rankedStats[0].Rank)
+		//TODO: GET MASTERY DATA AS WELL
+		return formatPlayerRankedStats(rankedStats)
 	}
-
 	log.Println("Unable to get accInfo for: " + playerName)
 	return "Sorry, something went wrong"
 }
@@ -215,6 +215,20 @@ func getAccountInfo(playerName string) (summoner Summoner, exists bool) {
 	return sum, true
 }
 
+func formatPlayerRankedStats(rankedStats RankedInfo) (formattedRanked string) {
+	var rankedResults string
+	for n := 0; n < len(rankedStats); n++ {
+		if rankedStats[n].QueueType == "RANKED_SOLO_5x5" {
+			if rankedStats[n].Tier == "" && rankedStats[n].Rank == "" {
+				return rankedStats[n].SummonerName + " is currently unranked with " + strconv.Itoa(rankedStats[n].Wins) + " wins and " + strconv.Itoa(rankedStats[n].Losses) + " losses."
+			}
+			rankedResults = rankedStats[n].SummonerName + " is currently " + rankedStats[n].Tier + " " + rankedStats[n].Rank +
+				" and " + strconv.Itoa(rankedStats[n].LeaguePoints) + " LP. This season they have a total of " + strconv.Itoa(rankedStats[n].Wins) + " wins and " + strconv.Itoa(rankedStats[n].Losses) + " losses."
+		}
+	}
+	return rankedResults
+}
+
 func formatLastMatchResponse(puuid string, matchResults MatchResults) (matchResultsFormatted string) {
 
 	mySummonerStats := parseParticipant(puuid, matchResults)
@@ -234,8 +248,9 @@ func formatLastMatchResponse(puuid string, matchResults MatchResults) (matchResu
 	seconds := matchResults.Info.GameDuration % 60
 
 	resultsFormatted := mySummonerStats.SummonerName + "'s last game consists of the following stats:" +
+		"\nDate: " + time.Unix(int64((matchResults.Info.GameCreation/1000)), 0).UTC().String() +
 		"\nGame type: " + matchResults.Info.GameMode +
-		"\nGame duration: %02d" + strconv.Itoa(minutes) + "%02d:" + strconv.Itoa(seconds) +
+		"\nGame duration: " + fmt.Sprintf("%02d:%02d", int(minutes), int(seconds)) +
 		"\nChampion: " + mySummonerStats.ChampionName +
 		"\nRole: " + mySummonerStats.IndividualPosition +
 		"\nKills: " + strconv.Itoa(mySummonerStats.Kills) +
