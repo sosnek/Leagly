@@ -77,6 +77,10 @@ type Mastery []struct {
 	LastPlayTime   int64
 }
 
+type Data struct {
+	Champion map[string]interface{}
+}
+
 const RANKED_SOLO = 420
 const RANKED_FLEX = 440
 
@@ -256,10 +260,37 @@ func getAccountInfo(playerName string) (summoner Summoner, exists bool) {
 
 }
 
-func formatMasteries(masteryStats []Mastery) string {
+//ToDo : create an enum to map every champion to its key and get the name
+func GetLeagueChampions() Data {
+	resp, err := http.Get("http://ddragon.leagueoflegends.com/cdn/12.1.1/data/en_US/champion.json")
 
-	
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Fatalln(err)
+	}
+	//Convert the body to type string
+	sb := string(body)
+
+	var objmap map[string]json.RawMessage
+	json.Unmarshal([]byte(sb), &objmap)
+
+	var s Data
+	json.Unmarshal(objmap["data"], &s.Champion)
+
+	for n := 0; n < len(s.Champion); n++ {
+		//idk
+	}
+
+	return s
 }
+
+//func FormatMasteries(masteryStats []Mastery)  {
+
+//}
 
 //TODO:
 

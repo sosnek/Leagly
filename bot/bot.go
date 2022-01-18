@@ -74,6 +74,19 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
+	if playerName[0] == "!test" {
+		if validateName(playerName[1]) {
+			query.GetLeagueChampions()
+			//var output string
+			//output = champs
+			//for n := 0; n < len(champs); n++ {
+			//	output = output + " " + champs[n].Name
+			//}
+			s.ChannelMessageSend(m.ChannelID, "temp")
+		}
+		return
+	}
+
 	// !help
 	if m.Content == "!help" {
 		handleHelp(s, m)
