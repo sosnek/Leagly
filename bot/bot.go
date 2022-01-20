@@ -42,48 +42,9 @@ func ConnectToDiscord() {
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	messageContent := m.Content
-	playerName := strings.Fields(messageContent)
-	fmt.Println(playerName, len(playerName))
+	args := strings.Fields(messageContent)
 
-	// ignore messages from bot himself
-	if m.Author.ID == s.State.User.ID {
-		return
-	}
-
-	// !lastmatch - Searches and displays stats from last league game played
-	if playerName[0] == "!lastmatch" {
-		if validateName(playerName[1]) {
-			s.ChannelMessageSend(m.ChannelID, query.GetLastMatch(playerName[1]))
-		}
-		return
-	}
-
-	// !live - checks if player is currently in a game
-	if playerName[0] == "!live" {
-		if validateName(playerName[1]) {
-			s.ChannelMessageSend(m.ChannelID, query.IsInGame(playerName[1]))
-		}
-		return
-	}
-
-	//lookup
-	if playerName[0] == "!lookup" {
-		if validateName(playerName[1]) {
-			s.ChannelMessageSend(m.ChannelID, query.LookupPlayer(playerName[1]))
-		}
-		return
-	}
-
-	if playerName[0] == "!test" {
-		if validateName(playerName[1]) {
-			query.GetLeagueChampions()
-			//var output string
-			//output = champs
-			//for n := 0; n < len(champs); n++ {
-			//	output = output + " " + champs[n].Name
-			//}
-			s.ChannelMessageSend(m.ChannelID, "temp")
-		}
+	if len(args) < 1 {
 		return
 	}
 
@@ -93,22 +54,57 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	// help as default
-	handleHelp(s, m)
+	// ignore messages from bot himself
+	if m.Author.ID == s.State.User.ID {
+		return
+	}
+
+	// !lastmatch - Searches and displays stats from last league game played
+	if args[0] == "!lastmatch" {
+		if validateName(args) {
+			s.ChannelMessageSend(m.ChannelID, query.GetLastMatch(args[1]))
+		}
+		return
+	}
+
+	// !live - checks if player is currently in a game
+	if args[0] == "!live" {
+		if validateName(args) {
+			s.ChannelMessageSend(m.ChannelID, query.IsInGame(args[1]))
+		}
+		return
+	}
+
+	//lookup
+	if args[0] == "!lookup" {
+		if validateName(args) {
+			s.ChannelMessageSend(m.ChannelID, query.LookupPlayer(args[1]))
+		}
+		return
+	}
+
+	if args[0] == "!test" {
+		if validateName(args) {
+			s.ChannelMessageSend(m.ChannelID, query.GetChampion(args[1]))
+		}
+		return
+	}
+
 }
 
-func validateName(name string) bool {
-	return len([]rune(name)) > 0
+func validateName(name []string) bool {
+	if len(name) < 2 {
+		return false
+	}
+	return len([]rune(name[1])) > 0
 }
 
 func handleHelp(s *discordgo.Session, m *discordgo.MessageCreate) {
-	msg := "commands:\n"
+	msg := "```Commands:\n"
 	msg = fmt.Sprintf("%s\t%s\n", msg, "!help - shows all available commands")
-	msg = fmt.Sprintf("%s\t%s\n", msg, "!challengeBot - bot will always accept challenges")
-	msg = fmt.Sprintf("%s\t%s\n", msg, "!challenges - shows all your open challenges")
-	msg = fmt.Sprintf("%s\t%s\n", msg, "!challenge <username> - challenge another user")
-	msg = fmt.Sprintf("%s\t%s\n", msg, "!accepct <username> - accept a challenge from another user")
-	msg = fmt.Sprintf("%s\t%s\n", msg, "!leaderboard - shows the leaderboard")
+	msg = fmt.Sprintf("%s\t%s\n", msg, "!live <playername> - Checks to see if the player is in a game")
+	msg = fmt.Sprintf("%s\t%s\n", msg, "!lastmatch <playername> - shows the players last match stats")
+	msg = fmt.Sprintf("%s\t%s\n", msg, "!lookup <playername> - shows ranked history + mastery stats of player```")
 
 	s.ChannelMessageSend(m.ChannelID, msg)
 }

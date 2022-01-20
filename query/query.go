@@ -77,9 +77,11 @@ type Mastery []struct {
 	LastPlayTime   int64
 }
 
-type Data struct {
-	Champion map[string]interface{}
+type Champion struct {
+	Key string
 }
+
+var champ3 map[string]Champion
 
 const RANKED_SOLO = 420
 const RANKED_FLEX = 440
@@ -122,7 +124,7 @@ func LookupPlayer(playerName string) (result string) {
 	accInfo, exists := getAccountInfo(playerName)
 	if exists {
 		rankedStats := getRankedStats(accInfo.Id)
-		//masteryStats := getMasteryData(accInfo.Id)
+		masteryStats := getMasteryData(accInfo.Id)
 		matchStatsID, exist := getMatchID(accInfo.Puuid, 10)
 		if exist {
 			var matchStatsSlice []MatchResults
@@ -130,8 +132,9 @@ func LookupPlayer(playerName string) (result string) {
 				matchStatsSlice = append(matchStatsSlice, getMatch(matchStatsID[n]))
 			}
 			matchStatsFormatted := formatMatchStats(matchStatsSlice, accInfo.Puuid)
-			tmp := formatPlayerRankedStats(rankedStats)
-			return (tmp + matchStatsFormatted)
+			masteryStatsFormatted := formatMasteries(masteryStats)
+			fmt.Println(matchStatsFormatted)
+			return (formatPlayerRankedStats(rankedStats) + masteryStatsFormatted)
 		}
 	}
 	log.Println("Unable to get accInfo for: " + playerName)
@@ -261,7 +264,7 @@ func getAccountInfo(playerName string) (summoner Summoner, exists bool) {
 }
 
 //ToDo : create an enum to map every champion to its key and get the name
-func GetLeagueChampions() Data {
+func InitializedChampStruct() {
 	resp, err := http.Get("http://ddragon.leagueoflegends.com/cdn/12.1.1/data/en_US/champion.json")
 
 	if err != nil {
@@ -277,20 +280,33 @@ func GetLeagueChampions() Data {
 
 	var objmap map[string]json.RawMessage
 	json.Unmarshal([]byte(sb), &objmap)
-
-	var s Data
-	json.Unmarshal(objmap["data"], &s.Champion)
-
-	for n := 0; n < len(s.Champion); n++ {
-		//idk
-	}
-
-	return s
+	json.Unmarshal(objmap["data"], &champ3) //fuck you :)
 }
 
-//func FormatMasteries(masteryStats []Mastery)  {
+func GetChampion(champID string) string {
+	for k, v := range champ3 {
+		if champID == v.Key {
+			return k
+		}
+	}
+	return champID
+}
 
-//}
+func formatMasteries(masteryStats Mastery) string {
+	var iterations int
+	if len(masteryStats) < 10 {
+		iterations = len(masteryStats)
+	} else {
+		iterations = 5
+	}
+	masteryStatsFormatted := "```Champion Masteries: \n\n" + fmt.Sprintf("%-30s\t%-30s\t%-30s\t%-30s\n", "CHAMPION", "POINTS", "LEVEL", "LAST TIME CHAMP WAS PLAYED\n")
+	for n := 0; n < iterations; n++ {
+		masteryStatsFormatted = masteryStatsFormatted + fmt.Sprintf("%-30s\t%-30s\t%-30s\t%-30s", GetChampion(fmt.Sprint(masteryStats[n].ChampionID)),
+			strconv.Itoa(masteryStats[n].ChampionPoints), strconv.Itoa(masteryStats[n].ChampionLevel),
+			time.Unix(int64((masteryStats[n].LastPlayTime/1000)), 0).UTC().String()+"\n")
+	}
+	return masteryStatsFormatted + "```"
+}
 
 //TODO:
 
@@ -324,17 +340,19 @@ func formatMatchStats(matchedStats []MatchResults, puuid string) string {
 }
 
 func formatPlayerRankedStats(rankedStats RankedInfo) (formattedRanked string) {
-	var rankedResults string
 	for n := 0; n < len(rankedStats); n++ {
-		if rankedStats[n].QueueType == "RANKED_SOLO_5x5" { // or RANKED_TEAM_5x5 ?
+		if rankedStats[n].QueueType == "RANKED_SOLO_5x5" || rankedStats[n].QueueType == "RANKED_TEAM_5x5 " {
 			if rankedStats[n].Tier == "" && rankedStats[n].Rank == "" {
-				return rankedStats[n].SummonerName + " is currently unranked with " + strconv.Itoa(rankedStats[n].Wins) + " wins and " + strconv.Itoa(rankedStats[n].Losses) + " losses."
+				return "```" + rankedStats[n].SummonerName + " is currently unranked with " + strconv.Itoa(rankedStats[n].Wins) + " wins and " + strconv.Itoa(rankedStats[n].Losses) + " losses.```"
 			}
-			rankedResults = rankedStats[n].SummonerName + " is currently " + rankedStats[n].Tier + " " + rankedStats[n].Rank +
-				" and " + strconv.Itoa(rankedStats[n].LeaguePoints) + " LP. This season they have a total of " + strconv.Itoa(rankedStats[n].Wins) + " wins and " + strconv.Itoa(rankedStats[n].Losses) + " losses."
+			return "```" + rankedStats[n].SummonerName + " is currently " + rankedStats[n].Tier + " " + rankedStats[n].Rank +
+				" and " + strconv.Itoa(rankedStats[n].LeaguePoints) + " LP. This season they have a total of " + strconv.Itoa(rankedStats[n].Wins) + " wins and " + strconv.Itoa(rankedStats[n].Losses) + " losses.```"
+		} else {
+			return "```" + rankedStats[n].SummonerName + " is not currently ranked.```"
 		}
+
 	}
-	return rankedResults
+	return "```No ranked data found```"
 }
 
 func formatLastMatchResponse(puuid string, matchResults MatchResults) (matchResultsFormatted string) {
@@ -343,19 +361,19 @@ func formatLastMatchResponse(puuid string, matchResults MatchResults) (matchResu
 
 	var hasWon string
 	if mySummonerStats.Win {
-		hasWon = "Yes"
+		hasWon = "Yes```"
 	} else {
 		if mySummonerStats.GameEndedInSurrender {
-			hasWon = "No, and it was an early surrender... Yikes"
+			hasWon = "No, and it was an early surrender... Yikes```"
 		} else {
-			hasWon = "No"
+			hasWon = "No```"
 		}
 	}
 
 	minutes := matchResults.Info.GameDuration / 60
 	seconds := matchResults.Info.GameDuration % 60
 
-	resultsFormatted := mySummonerStats.SummonerName + "'s last game consists of the following stats:" +
+	resultsFormatted := "```" + mySummonerStats.SummonerName + "'s last game consists of the following stats:" +
 		"\nDate: " + time.Unix(int64((matchResults.Info.GameCreation/1000)), 0).UTC().String() +
 		"\nGame type: " + matchResults.Info.GameMode +
 		"\nGame duration: " + fmt.Sprintf("%02d:%02d", int(minutes), int(seconds)) +
