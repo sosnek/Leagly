@@ -14,7 +14,7 @@ func main() {
 		fmt.Println(err.Error())
 		panic(err)
 	}
+
 	query.InitializedChampStruct()
 	bot.ConnectToDiscord()
-
 }
