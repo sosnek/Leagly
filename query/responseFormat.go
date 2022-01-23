@@ -13,6 +13,34 @@ import (
 
 var champ3 map[string]Champion
 
+type PlayerMatchStats struct {
+	SummonerName    string
+	ProfileIcon     int
+	Role            Role
+	PlayerChampions PlayerChampions
+}
+
+type Role struct {
+	PreferredRole1 string
+	PrefferedRole2 string
+
+	PreferredRole1PickRate int
+	PreferredRole2PickRate int
+
+	PreferredRole1WinRate int
+	PreferredRole2WinRate int
+}
+
+type PlayerChampions []struct {
+	Name        string
+	Wins        int
+	Loss        int
+	Kills       int
+	Deaths      int
+	Assists     int
+	GamesPlayed int
+}
+
 //!lastmatch player
 func GetLastMatch(playerName string) (result string) {
 
@@ -53,20 +81,26 @@ func LookupPlayer(playerName string) *discordgo.MessageSend {
 	if exists {
 		rankedInfo := getRankedInfo(accInfo.Id)
 		//masteryStats := getMasteryData(accInfo.Id)
-		matchStatsID, exist := getMatchID(accInfo.Puuid, 10)
+		matchStatsID, exist := getMatchID(accInfo.Puuid, 20)
 
 		if exist {
 			var matchStatsSlice []MatchResults
-			for n := 0; n < len(matchStatsID); n++ {
-				matchStatsSlice = append(matchStatsSlice, getMatch(matchStatsID[n]))
+			for n, k := 0, 0; n < len(matchStatsID) && k < 10; n++ {
+				newMatch := getMatch(matchStatsID[n])
+				if newMatch.Info.QueueId == RANKED_SOLO || newMatch.Info.QueueId == RANKED_FLEX {
+					matchStatsSlice = append(matchStatsSlice, newMatch)
+					k++
+				}
 			}
 
-			//matchStatsFormatted := formatMatchStats(matchStatsSlice, accInfo.Puuid)
+			playermatchstats := formatMatchStats(matchStatsSlice, accInfo.Puuid)
 			//masteryStatsFormatted := formatMasteries(masteryStats)
 			//fmt.Println(matchStatsFormatted)
 			fileName, rankedType := getRankedAsset(RankedInfo(rankedInfo))
 			file, _ := os.Open("./assets/" + fileName)
-			embed := formatRankedEmbed(rankedInfo, rankedType, fileName)
+			description := formatPlayerRankedStats(rankedInfo)
+			embed := formatRankedEmbed(rankedInfo, rankedType, fileName, description)
+			embed = formatMatchHistoryEmbed(embed, playermatchstats)
 			send = createMessageSend(embed, file, fileName)
 
 			return send
@@ -116,11 +150,11 @@ func formatMasteries(masteryStats Mastery) string {
 	return masteryStatsFormatted + "```"
 }
 
-func formatRankedEmbed(rankedInfo RankedInfo, rankedType int, fileName string) *discordgo.MessageEmbed {
+func formatRankedEmbed(rankedInfo RankedInfo, rankedType int, fileName string, description string) *discordgo.MessageEmbed {
 	embed := &discordgo.MessageEmbed{
 		Color:       000255000,
 		Title:       rankedInfo[rankedType].SummonerName,
-		Description: "Gold III with 68 LP. This season they have a total of 12 wins and 33 losses",
+		Description: description,
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
 			URL: "attachment://" + fileName,
 		},
@@ -129,12 +163,13 @@ func formatRankedEmbed(rankedInfo RankedInfo, rankedType int, fileName string) *
 	return embed
 }
 
-func formatMatchHistoryEmbed(embed *discordgo.MessageEmbed, matchedStats []MatchResults) {
+func formatMatchHistoryEmbed(embed *discordgo.MessageEmbed, playerMatchStats PlayerMatchStats) *discordgo.MessageEmbed {
 	embed.Author = &discordgo.MessageEmbedAuthor{
-		Name:    matchedStats[1].Info.Participants[1].SummonerName,
-		IconURL: "http://ddragon.leagueoflegends.com/cdn/12.2.1/img/profileicon/" + strconv.Itoa(matchedStats[1].Info.Participants[1].ProfileIcon) + ".png",
-		URL:     "https://na.op.gg/summoner/userName=" + matchedStats[1].Info.Participants[1].SummonerName,
+		Name:    playerMatchStats.SummonerName,
+		IconURL: "http://ddragon.leagueoflegends.com/cdn/12.2.1/img/profileicon/" + strconv.Itoa(playerMatchStats.ProfileIcon) + ".png",
+		URL:     "https://na.op.gg/summoner/userName=" + playerMatchStats.SummonerName,
 	}
+	return embed
 }
 
 //TODO:
@@ -145,43 +180,89 @@ func formatMatchHistoryEmbed(embed *discordgo.MessageEmbed, matchedStats []Match
 //total KDA of last 10 games
 // win % of last 10 games
 // role ratio
-// using matchStats.Info.Queuetype, only use FLex and solo/duo games
-func formatMatchStats(matchedStats []MatchResults, puuid string) string {
-	var retString string
+// using matchStats.Info.Queuetype, only use FLex and solo/duo games PlayerMatchStats
+func formatMatchStats(matchedStats []MatchResults, puuid string) PlayerMatchStats {
 	//var playerStats []Participants
-	var wins int
-	var loss int
+
+	var playermatchstats PlayerMatchStats //Incorrect figure it out tomorrow @@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 
 	for n := 0; n < len(matchedStats); n++ {
 		participant := parseParticipant(puuid, matchedStats[n])
-		if participant.Puuid == puuid {
-			//playerStats[n].ChampionName = append(playerStats[n].ChampionName, participant.ChampionName)
-			if participant.Win {
-				wins++
-			} else {
-				loss++
+		playermatchstats.ProfileIcon = participant.ProfileIcon
+		playermatchstats.SummonerName = participant.SummonerName
+		playermatchstats.PlayerChampions[n].Name = participant.ChampionName
+		playermatchstats.PlayerChampions[n].Kills = participant.Kills
+		playermatchstats.PlayerChampions[n].Deaths = participant.Deaths
+		playermatchstats.PlayerChampions[n].Assists = participant.Assists
+		if participant.Win {
+			playermatchstats.PlayerChampions[n].Wins++
+		} else {
+			playermatchstats.PlayerChampions[n].Loss++
+		}
+		playermatchstats.PlayerChampions[n].GamesPlayed++
+		if participant.IndividualPosition == "TOP" {
+
+		}
+
+	}
+	return playermatchstats
+}
+
+// func countChamps() {
+
+// 	duplicate_frequency := make(map[string]int)
+
+// 	for _, item := range list {
+// 		// check if the item/element exist in the duplicate_frequency map
+
+// 		_, exist := duplicate_frequency[item]
+
+// 		if exist {
+// 			duplicate_frequency[item] += 1 // increase counter by 1 if already in the map
+// 		} else {
+// 			duplicate_frequency[item] = 1 // else start counting from 1
+// 		}
+// 	}
+// 	return duplicate_frequency
+// }
+
+func getRankedAsset(rankedStats RankedInfo) (filename string, rankedType int) {
+	for n := 0; n < len(rankedStats); n++ {
+		if rankedStats[n].QueueType == "RANKED_SOLO_5x5" || rankedStats[n].QueueType == "RANKED_TEAM_5x5 " {
+			switch {
+			case rankedStats[n].Tier == "IRON":
+				return "Emblem_Iron.png", n
+			case rankedStats[n].Tier == "BRONZE":
+				return "Emblem_Bronze.png", n
+			case rankedStats[n].Tier == "SILVER":
+				return "Emblem_Silver.png", n
+			case rankedStats[n].Tier == "GOLD":
+				return "Emblem_Gold.png", n
+			case rankedStats[n].Tier == "PLATINUM":
+				return "Emblem_Platinum.png", n
+			case rankedStats[n].Tier == "DIAMOND":
+				return "Emblem_Diamond.png", n
+			case rankedStats[n].Tier == "MASTER":
+				return "Emblem_Master.png", n
+			case rankedStats[n].Tier == "GRANDMASTER":
+				return "Emblem_Grandmaster.png", n
+			case rankedStats[n].Tier == "CHALLENGER":
+				return "Emblem_Challenger.png", n
 			}
+		}
+	}
+	return "UNRANKED.png", 0
+}
+
+func parseParticipant(puuid string, matchresults MatchResults) Participants {
+	var i int
+	for n := 0; n < len(matchresults.Info.Participants); n++ {
+		if puuid == matchresults.Info.Participants[n].Puuid {
+			i = n
 			break
 		}
 	}
-	//after this is done we should have an array of type Participant that holds stats from the last 10 ranked games they played
-	return retString
-}
-
-func formatPlayerRankedStats(rankedStats RankedInfo) (formattedRanked string) {
-	for n := 0; n < len(rankedStats); n++ {
-		if rankedStats[n].QueueType == "RANKED_SOLO_5x5" || rankedStats[n].QueueType == "RANKED_TEAM_5x5 " {
-			if rankedStats[n].Tier == "" && rankedStats[n].Rank == "" {
-				return "```" + rankedStats[n].SummonerName + " is currently unranked with " + strconv.Itoa(rankedStats[n].Wins) + " wins and " + strconv.Itoa(rankedStats[n].Losses) + " losses.```"
-			}
-			return "```" + rankedStats[n].SummonerName + " is currently " + rankedStats[n].Tier + " " + rankedStats[n].Rank +
-				" and " + strconv.Itoa(rankedStats[n].LeaguePoints) + " LP. This season they have a total of " + strconv.Itoa(rankedStats[n].Wins) + " wins and " + strconv.Itoa(rankedStats[n].Losses) + " losses.```"
-		} else {
-			return "```" + rankedStats[n].SummonerName + " is not currently ranked.```"
-		}
-
-	}
-	return "```No ranked data found```"
+	return matchresults.Info.Participants[i]
 }
 
 func formatLastMatchResponse(puuid string, matchResults MatchResults) (matchResultsFormatted string) {
@@ -219,42 +300,15 @@ func formatLastMatchResponse(puuid string, matchResults MatchResults) (matchResu
 	return resultsFormatted
 }
 
-func getRankedAsset(rankedStats RankedInfo) (filename string, rankedType int) {
-	//var filename string
-	//var rankedType
+func formatPlayerRankedStats(rankedStats RankedInfo) string {
 	for n := 0; n < len(rankedStats); n++ {
 		if rankedStats[n].QueueType == "RANKED_SOLO_5x5" || rankedStats[n].QueueType == "RANKED_TEAM_5x5 " {
-			switch {
-			case rankedStats[n].Tier == "IRON":
-				return "Emblem_Iron.png", n
-			case rankedStats[n].Tier == "BRONZE":
-				return "Emblem_Bronze.png", n
-			case rankedStats[n].Tier == "SILVER":
-				return "Emblem_Silver.png", n
-			case rankedStats[n].Tier == "GOLD":
-				return "Emblem_Gold.png", n
-			case rankedStats[n].Tier == "PLATINUM":
-				return "Emblem_Platinum.png", n
-			case rankedStats[n].Tier == "DIAMOND":
-				return "Emblem_Diamond.png", n
-			case rankedStats[n].Tier == "MASTER":
-				return "Emblem_Master.png", n
-			case rankedStats[n].Tier == "GRANDMASTER":
-				return "Emblem_Grandmaster.png", n
-			case rankedStats[n].Tier == "CHALLENGER":
-				return "Emblem_Challenger.png", n
-			}
+			return rankedStats[n].Tier + " " + rankedStats[n].Rank +
+				" with " + strconv.Itoa(rankedStats[n].LeaguePoints) + " LP. This season they have a total of " + strconv.Itoa(rankedStats[n].Wins) + " wins and " + strconv.Itoa(rankedStats[n].Losses) + " losses.```"
+		} else {
+			return "Currently unranked."
 		}
+
 	}
-	//return filename, rankedType
-	return "", 0
-}
-func parseParticipant(puuid string, matchresults MatchResults) Participants {
-	var i int
-	for n := 0; n < len(matchresults.Info.Participants); n++ {
-		if puuid == matchresults.Info.Participants[n].Puuid {
-			i = n
-		}
-	}
-	return matchresults.Info.Participants[i]
+	return "```No ranked data found```"
 }

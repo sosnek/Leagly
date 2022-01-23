@@ -4,6 +4,11 @@ import (
 	"Leagly/config" //importing our config package which we have created above
 	"Leagly/query"
 	"fmt" //to print errors
+	"image"
+	"image/draw"
+	"image/jpeg"
+	"io"
+	"net/http"
 	"os"
 	"os/signal"
 	"strings"
@@ -92,15 +97,15 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	if args[0] == "!g" {
 		if validateName(args) {
-			file, _ := os.Open("./assets/Emblem_Challenger.png")
 			embed := &discordgo.MessageEmbed{
+				URL:         "https://www.youtube.com/",
 				Color:       000255000,
 				Title:       "Lets",
 				Description: "Gold III with 68 LP. This season they have a total of 12 wins and 33 losses",
 				Image: &discordgo.MessageEmbedImage{
-					URL:    "http://ddragon.leagueoflegends.com/cdn/12.2.1/img/champion/Akshan.png",
-					Width:  32,
-					Height: 32,
+					URL:    "attachment://output.png",
+					Width:  64,
+					Height: 16,
 				},
 				Author: &discordgo.MessageEmbedAuthor{
 					Name:    "Sosnek",
@@ -108,7 +113,9 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 					URL:     "https://na.op.gg/summoner/userName=lets",
 				},
 				Thumbnail: &discordgo.MessageEmbedThumbnail{
-					URL: "attachment://Emblem_Challenger.png",
+					URL:    "attachment://Emblem_Challenger.png",
+					Height: 32,
+					Width:  32,
 				},
 				Fields: []*discordgo.MessageEmbedField{
 					{
@@ -126,18 +133,18 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 						Inline: false,
 					},
 					{
-						Name:   "Akshan\t\t",
-						Value:  "67 % (2W 1 L)\t\t",
+						Name:   "```Akshanmnnnnnnnnnnnnn```",
+						Value:  "```67 % (2W 1 L)```",
 						Inline: true,
 					},
 					{
-						Name:   "Neeko\t\t",
-						Value:  "67 % (2W 1 L)\t\t",
+						Name:   "```Aurelion Sol```",
+						Value:  "```67 % (2W 1 L)```",
 						Inline: true,
 					},
 					{
-						Name:   "Leblanc\t\t",
-						Value:  "67 % (2W 1 L)\t\t",
+						Name:   "```Leblanc```",
+						Value:  "```67 % (2W 1 L)```",
 						Inline: true,
 					},
 				},
@@ -146,10 +153,52 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 					IconURL: "https://i.imgur.com/AfFp7pu.png",
 				},
 			}
+			//might have to do only 2 champions because :
+			/*
+
+				embed width will only be constrained to image width if the image is at least 300px wide
+				otherwise the text will expand it, like youve done with your footer
+				thumbnails are not factored into this at all, only the big image at the bottom
+
+				embed image size: 400x300
+				embed thumbnail size: 80x80
+				if the embed image is at least 300 pixels wide after resizing, the embed size will shrink to the size of the image
+				*from discohook discord
+			*/
+			URL := "http://ddragon.leagueoflegends.com/cdn/12.2.1/img/champion/Teemo.png"
+			URL2 := "http://ddragon.leagueoflegends.com/cdn/12.2.1/img/champion/Zoe.png"
+			URL3 := "http://ddragon.leagueoflegends.com/cdn/12.2.1/img/champion/Ryze.png"
+			err := downloadFile(URL, "Teemo.png")
+			if err != nil {
+				return
+			}
+			err = downloadFile(URL2, "Zoe.png")
+			if err != nil {
+				return
+			}
+			err = downloadFile(URL3, "Ryze.png")
+			if err != nil {
+				return
+			}
+
+			var imageNames []string
+			imageNames = append(imageNames, "Zoe.png")
+			imageNames = append(imageNames, "Teemo.png")
+			imageNames = append(imageNames, "Ryze.png")
+
+			fileImageName := mergeImages(imageNames)
+
+			file, _ := os.Open(fileImageName)
+			file2, _ := os.Open("./assets/Emblem_Challenger.png")
 
 			var files []*discordgo.File
 			files = append(files, &discordgo.File{
 				Name:        "Emblem_Challenger.png",
+				ContentType: "image/png",
+				Reader:      file2,
+			})
+			files = append(files, &discordgo.File{
+				Name:        fileImageName,
 				ContentType: "image/png",
 				Reader:      file,
 			})
@@ -158,78 +207,80 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 				Embed: embed,
 				Files: files,
 			}
+
 			s.ChannelMessageSendComplex(m.ChannelID, send)
 		}
 		return
 	}
+}
 
-	if args[0] == "!em" {
-		if validateName(args) {
-			var tmp discordgo.MessageEmbed
-			var tmp2 discordgo.MessageEmbedAuthor
-			var tmp3 discordgo.MessageEmbedThumbnail
-			var tmp4 discordgo.MessageEmbedField
-			var tmp5 discordgo.MessageEmbedField
-			var tmp11 discordgo.MessageEmbedField
-			var tmp9 discordgo.MessageEmbedField
-			var tmp10 discordgo.MessageEmbedField
-			var tmp6 discordgo.MessageEmbedImage
-			var tmp7 discordgo.MessageEmbedFooter
-			var tmp12 discordgo.File
-			var tmp13 discordgo.MessageAttachment
-			tmp13.Filename = "test.jpng"
-			tmp13.URL = "./bot/test.png"
-			m.Attachments = append(m.Attachments, &tmp13)
-			var tmp14 discordgo.MessageSend
+func mergeImages(imageName []string) string {
 
-			file, _ := os.Open("./bot/test.png")
-			tmp12.Reader = file
-			tmp12.Name = "test.png"
-			tmp12.ContentType = "image/png"
-			tmp14.File = &tmp12
-			s.ChannelMessageSendComplex(m.ChannelID, &tmp14)
-			//msg, err := s.ChannelFileSend(m.ChannelID, "test.jpg", file)
-			//fmt.Println(msg, err)
-			tmp7.Text = "Some footer text"
-			tmp7.IconURL = "https://i.imgur.com/AfFp7pu.png"
-			//tmp6.URL = "http://ddragon.leagueoflegends.com/cdn/12.2.1/img/champion/Akshan.png"
-			tmp6.URL = "attachment://test.png"
-			tmp5.Inline = true
-			tmp5.Name = fmt.Sprintf("%-30s", "Neeko")
-			tmp5.Value = fmt.Sprintf("%-30s", "77% (3W 4 L)")
-			tmp9.Name = "10.7 / 8.0 / 17.9"
-			tmp9.Value = "3:58:1 (53%)"
-			tmp10.Name = "\u200B"
-			tmp10.Value = "\u200B"
-			tmp4.Inline = true
-			tmp4.Name = fmt.Sprintf("%-30s", "Akshan")
-			tmp4.Value = fmt.Sprintf("%-30s", "67% (2W 1L)")
-			tmp11.Name = fmt.Sprintf("%-30s", "Neeko")
-			tmp11.Value = fmt.Sprintf("%-30s", "100% (1W 0L)")
-			tmp11.Inline = true
-			tmp3.URL = "attachment://test.png"
-			tmp2.IconURL = "https://i.imgur.com/AfFp7pu.png"
-			tmp2.URL = "https://na.op.gg/summoner/userName=lets"
-			tmp2.Name = "Lets"
-			tmp.Color = 000255000
-			tmp.Description = "Gold III with 68 LP. This season they have a total of 12 wins and 33 losses"
-			tmp.URL = "https://na.op.gg/summoner/userName=lets"
-			tmp.Image = &tmp6
-			tmp.Author = &tmp2
-			tmp.Thumbnail = &tmp3
-			var tmp8 []*discordgo.MessageEmbedField
-			tmp8 = append(tmp8, &tmp9)
-			tmp8 = append(tmp8, &tmp10)
-			tmp8 = append(tmp8, &tmp4)
-			tmp8 = append(tmp8, &tmp5)
-			tmp8 = append(tmp8, &tmp11)
-			tmp.Fields = tmp8
-			s.ChannelMessageSendEmbed(m.ChannelID, &tmp)
-			//s.ChannelMessageSend(m.ChannelID, "test")
+	var imgFile []*os.File
+	var img []image.Image
+	for n := 0; n < len(imageName); n++ {
+		imgFile1, err := os.Open(imageName[n])
+		if err != nil {
+			fmt.Println(err)
 		}
-		return
+		imgFile = append(imgFile, imgFile1)
+		img1, _, err := image.Decode(imgFile1)
+		if err != nil {
+			fmt.Println(err)
+		}
+		img = append(img, img1)
+	}
+	sp := image.Point{img[0].Bounds().Dx(), 0}
+	sp2 := image.Point{img[1].Bounds().Dx(), 0}
+
+	r2 := image.Rectangle{sp, sp.Add(img[1].Bounds().Size())}
+
+	sp3 := image.Point{sp.X + sp2.X, 0}
+	r3 := image.Rectangle{sp3, sp3.Add(img[2].Bounds().Size())}
+
+	r := image.Rectangle{image.Point{0, 0}, r3.Max}
+
+	rgba := image.NewRGBA(r)
+	draw.Draw(rgba, img[0].Bounds(), img[0], image.Point{0, 0}, draw.Src)
+	draw.Draw(rgba, r2, img[1], image.Point{0, 0}, draw.Src)
+	draw.Draw(rgba, r3, img[2], image.Point{0, 0}, draw.Src)
+
+	out, err := os.Create("./output.png")
+	if err != nil {
+		fmt.Println(err)
+	}
+	var opt jpeg.Options
+	opt.Quality = 80
+
+	jpeg.Encode(out, rgba, &opt)
+	return "./output.png"
+}
+
+func downloadFile(URL, fileName string) error {
+	//Get the response bytes from the url
+	response, err := http.Get(URL)
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != 200 {
+		return err
+	}
+	//Create a empty file
+	file, err := os.Create(fileName)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	//Write the bytes to the fiel
+	_, err = io.Copy(file, response.Body)
+	if err != nil {
+		return err
 	}
 
+	return nil
 }
 
 func validateName(name []string) bool {
