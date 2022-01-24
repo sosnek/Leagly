@@ -3,9 +3,11 @@ package query
 import (
 	"Leagly/config"
 	"encoding/json"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"strconv"
 )
 
@@ -187,13 +189,13 @@ func getAccountInfo(playerName string) (summoner Summoner, exists bool) {
 	resp, err := http.Get("https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/" + playerName + "?api_key=" + config.ApiKey)
 
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
 		return summoner, false
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println(err)
 		return summoner, false
 	}
 	//Convert the body to type string
@@ -224,4 +226,31 @@ func InitializedChampStruct() {
 	var objmap map[string]json.RawMessage
 	json.Unmarshal([]byte(sb), &objmap)
 	json.Unmarshal(objmap["data"], &champ3) //fuck you :)
+}
+
+func downloadFile(URL, fileName string) error {
+	//Get the response bytes from the url
+	response, err := http.Get(URL)
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+
+	if response.StatusCode != 200 {
+		return err
+	}
+	//Create a empty file
+	file, err := os.Create("./championImages/" + fileName)
+	if err != nil {
+		return err
+	}
+	defer file.Close()
+
+	//Write the bytes to the fiel
+	_, err = io.Copy(file, response.Body)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
