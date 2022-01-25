@@ -17,6 +17,7 @@ type Summoner struct {
 	Puuid         string
 	Name          string
 	SummonerLevel int
+	ProfileIconId int
 }
 
 type MatchResults struct {
@@ -85,6 +86,7 @@ type Champion struct {
 
 const RANKED_SOLO = 420
 const RANKED_FLEX = 440
+const RATE_LIMIT = 30
 
 ///
 ///

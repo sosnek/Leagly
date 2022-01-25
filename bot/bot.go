@@ -42,7 +42,7 @@ func ConnectToDiscord() {
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	messageContent := m.Content
-	args := strings.Fields(messageContent)
+	args := createName(strings.Fields(messageContent))
 
 	if len(args) < 1 {
 		return
@@ -189,6 +189,13 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		}
 		return
 	}
+}
+
+func createName(args []string) []string {
+	for n := 2; n < len(args); n++ {
+		args[1] += " " + args[n]
+	}
+	return args
 }
 
 func validateName(name []string) bool {

@@ -9,6 +9,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
@@ -41,7 +42,6 @@ type PlayerChampions struct {
 	Deaths      int
 	Assists     int
 	GamesPlayed int
-	Role        string
 }
 
 //!lastmatch player
@@ -83,31 +83,41 @@ func LookupPlayer(playerName string) (send *discordgo.MessageSend, err error) {
 	send = &discordgo.MessageSend{}
 	if exists {
 		rankedInfo := getRankedInfo(accInfo.Id)
+		fileName, rankedType := getRankedAsset(RankedInfo(rankedInfo))
 		//masteryStats := getMasteryData(accInfo.Id)
-		matchStatsID, exist := getMatchID(accInfo.Puuid, 40)
+		matchIDs, exist := getMatchID(accInfo.Puuid, RATE_LIMIT)
+		if len(matchIDs) < 1 {
+			return send, errors.New("No match history found for " + playerName)
+		}
 
 		if exist {
 			var matchStatsSlice []MatchResults
-			for n, k := 0, 0; n < len(matchStatsID) && k < 10; n++ {
-				newMatch := getMatch(matchStatsID[n])
+			for n, k := 0, 0; n < len(matchIDs) && k < 10; n++ {
+				newMatch := getMatch(matchIDs[n])
 				if newMatch.Info.QueueId == RANKED_SOLO || newMatch.Info.QueueId == RANKED_FLEX {
 					matchStatsSlice = append(matchStatsSlice, newMatch)
 					k++
 				}
 			}
 
+			description := formatPlayerRankedStats(rankedInfo)
+			embed := formatRankedEmbed(playerName, rankedType, fileName, description)
+			embed = formatEmbedAuthor(embed, accInfo)
+
+			if matchStatsSlice == nil {
+				return &discordgo.MessageSend{Embed: embed}, errors.New("No rank history found for " + playerName)
+			}
+
 			playermatchstats := formatMatchStats(matchStatsSlice, accInfo.Puuid)
 			top3ChampStats := getTop3Champions(playermatchstats)
-			if len(top3ChampStats) < 1 {
-				return send, errors.New("No match history found for " + playerName)
+			var top3ChampNames []string
+			for k := 0; k < len(top3ChampStats); k++ {
+				top3ChampNames = append(top3ChampNames, top3ChampStats[k].Name)
 			}
-			top3ChampNames := []string{top3ChampStats[0].Name, top3ChampStats[1].Name, top3ChampStats[2].Name}
+
 			//masteryStatsFormatted := formatMasteries(masteryStats)
 			//fmt.Println(matchStatsFormatted)
-			fileName, rankedType := getRankedAsset(RankedInfo(rankedInfo))
-			description := formatPlayerRankedStats(rankedInfo)
-			embed := formatRankedEmbed(rankedInfo, rankedType, fileName, description)
-			embed = formatEmbedAuthor(embed, playermatchstats)
+
 			embed = formatPlayerLookupEmbedFields(embed, playermatchstats, top3ChampNames)
 			files := formatEmbedImages(embed, top3ChampNames, fileName)
 			send = createMessageSend(embed, files)
@@ -146,80 +156,62 @@ func GetChampion(champID string) string {
 
 func formatPlayerLookupEmbedFields(embed *discordgo.MessageEmbed, playerMatchStats PlayerMatchStats, top3Champs []string) *discordgo.MessageEmbed {
 
-	champ1 := "\u200b"
-	champ2 := "\u200b"
-	champ3 := "\u200b"
-	champ1Name := "\u200b"
-	champ2Name := "\u200b"
-	champ3Name := "\u200b"
+	champData := []string{"\u200b", "\u200b", "\u200b", "\u200b", "\u200b", "\u200b"}
 
-	var champ1PH int
-	var champ2PH int
-	var champ3PH int
-	for j := 0; j < len(playerMatchStats.PlayerChampions); j++ {
-		if top3Champs[0] == playerMatchStats.PlayerChampions[j].Name {
-			champ1PH = j
-		} else if top3Champs[1] == playerMatchStats.PlayerChampions[j].Name {
-			champ2PH = j
-		} else if top3Champs[2] == playerMatchStats.PlayerChampions[j].Name {
-			champ3PH = j
+	KDA1 := fmt.Sprintf("  %.1f KDA", 3.20) //@@@@@@@@@@@@@@
+	KDA2 := fmt.Sprintf("  %.1f KDA", 4.1)  //@@@@@@@@@@@@@@@@@@@@@@
+
+	for j := 0; j < len(top3Champs); j++ {
+		for k := 0; k < len(playerMatchStats.PlayerChampions); k++ {
+			if top3Champs[j] == playerMatchStats.PlayerChampions[k].Name {
+				if playerMatchStats.PlayerChampions[k].Deaths == 0 {
+					playerMatchStats.PlayerChampions[k].Deaths = 1
+				}
+				champData[j] = fmt.Sprintf("WR:%d%% %dW|%dL\nKDA: %.1f", ((playerMatchStats.PlayerChampions[k].Wins * 100) / playerMatchStats.PlayerChampions[k].GamesPlayed),
+					playerMatchStats.PlayerChampions[k].Wins, playerMatchStats.PlayerChampions[k].Loss, (float64(playerMatchStats.PlayerChampions[k].Kills+playerMatchStats.PlayerChampions[k].Assists))/(float64(playerMatchStats.PlayerChampions[k].Deaths)))
+				champData[j+3] = playerMatchStats.PlayerChampions[k].Name
+			}
 		}
 	}
 
-	if top3Champs[0] != "" {
-		champ1 = fmt.Sprintf("WR:%d%%\n (%dW/%dL)", ((playerMatchStats.PlayerChampions[champ1PH].Wins * 100) / playerMatchStats.PlayerChampions[champ1PH].GamesPlayed),
-			playerMatchStats.PlayerChampions[champ1PH].Wins, playerMatchStats.PlayerChampions[champ1PH].Loss)
-		champ1Name = playerMatchStats.PlayerChampions[champ1PH].Name
-	}
-	if top3Champs[1] != "" {
-		champ2 = fmt.Sprintf("WR:%d%%\n (%dW/%dL)", ((playerMatchStats.PlayerChampions[champ2PH].Wins * 100) / playerMatchStats.PlayerChampions[champ2PH].GamesPlayed),
-			playerMatchStats.PlayerChampions[champ2PH].Wins, playerMatchStats.PlayerChampions[champ2PH].Loss)
-		champ2Name = playerMatchStats.PlayerChampions[champ2PH].Name
-	}
-	if top3Champs[2] != "" {
-		champ3 = fmt.Sprintf("WR:%d%%\n (%dW/%dL)", ((playerMatchStats.PlayerChampions[champ3PH].Wins * 100) / playerMatchStats.PlayerChampions[champ3PH].GamesPlayed),
-			playerMatchStats.PlayerChampions[champ3PH].Wins, playerMatchStats.PlayerChampions[champ3PH].Loss)
-		champ3Name = playerMatchStats.PlayerChampions[champ3PH].Name
-	}
 	embed.Fields = []*discordgo.MessageEmbedField{
-		{
-			Name:  "Place holder\t\t",
-			Value: "Place holder\t\t",
-		},
 		{
 			Name:   "\u200b",
 			Value:  "\u200b",
 			Inline: false,
 		},
 		{
+			Name:  "Past 10 games stats: \t\t",
+			Value: "```TODO: KDA: ```\t\t", //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+		},
+		{
 			Name:   "Primary Role:",
-			Value:  playerMatchStats.Role.PreferredRole1, // % picked?
+			Value:  "```" + playerMatchStats.Role.PreferredRole1 + KDA1 + "```", // % picked?
 			Inline: true,
 		},
 		{
 			Name:   "Secondary Role:",
-			Value:  playerMatchStats.Role.PreferredRole2,
+			Value:  "```" + playerMatchStats.Role.PreferredRole2 + KDA2 + "```",
 			Inline: true,
 		},
 		{
 			Name:   "\u200b",
 			Value:  "\u200b",
-			Inline: false,
-		},
-
-		{
-			Name:   champ1Name,
-			Value:  champ1,
 			Inline: true,
 		},
 		{
-			Name:   champ2Name,
-			Value:  champ2,
+			Name:   champData[3],
+			Value:  "```" + champData[0] + "```",
 			Inline: true,
 		},
 		{
-			Name:   champ3Name,
-			Value:  champ3,
+			Name:   champData[4],
+			Value:  "```" + champData[1] + "```",
+			Inline: true,
+		},
+		{
+			Name:   champData[5],
+			Value:  "```" + champData[2] + "```",
 			Inline: true,
 		},
 	}
@@ -229,10 +221,10 @@ func formatPlayerLookupEmbedFields(embed *discordgo.MessageEmbed, playerMatchSta
 	return embed
 }
 
-func formatRankedEmbed(rankedInfo RankedInfo, rankedType int, fileName string, description string) *discordgo.MessageEmbed {
+func formatRankedEmbed(playerName string, rankedType int, fileName string, description string) *discordgo.MessageEmbed {
 	embed := &discordgo.MessageEmbed{
 		Color:       000127255,
-		Title:       rankedInfo[rankedType].SummonerName + "'s Ranked history",
+		Title:       playerName,
 		Description: description,
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
 			URL: "attachment://" + fileName,
@@ -242,59 +234,46 @@ func formatRankedEmbed(rankedInfo RankedInfo, rankedType int, fileName string, d
 	return embed
 }
 
-func formatEmbedAuthor(embed *discordgo.MessageEmbed, playerMatchStats PlayerMatchStats) *discordgo.MessageEmbed {
+func formatEmbedAuthor(embed *discordgo.MessageEmbed, playerInfo Summoner) *discordgo.MessageEmbed {
 	embed.Author = &discordgo.MessageEmbedAuthor{
-		Name:    playerMatchStats.SummonerName,
-		IconURL: "http://ddragon.leagueoflegends.com/cdn/12.2.1/img/profileicon/" + strconv.Itoa(playerMatchStats.ProfileIcon) + ".png",
-		URL:     "https://na.op.gg/summoner/userName=" + playerMatchStats.SummonerName,
+		Name:    playerInfo.Name,
+		IconURL: "http://ddragon.leagueoflegends.com/cdn/12.2.1/img/profileicon/" + strconv.Itoa(playerInfo.ProfileIconId) + ".png",
+		URL:     "https://na.op.gg/summoner/userName=" + strings.ReplaceAll(playerInfo.Name, " ", "%20"),
 	}
 	return embed
 }
 
 func formatEmbedImages(embed *discordgo.MessageEmbed, imageNames []string, rankFileName string) []*discordgo.File {
-	URL := "http://ddragon.leagueoflegends.com/cdn/12.2.1/img/champion/"
-
-	for k := 0; k < len(imageNames); k++ {
-		if imageNames[k] == "" {
-			imageNames[k] = "ph"
-		}
-	}
-	imageNames[0] += ".png"
-	imageNames[1] += ".png"
-	imageNames[2] += ".png"
-
-	err := downloadFile(URL+imageNames[0], imageNames[0])
-	if err != nil {
-		log.Fatal("Unable to download file")
-	}
-	err = downloadFile(URL+imageNames[1], imageNames[1])
-	if err != nil {
-		log.Fatal("Unable to download file")
-	}
-	err = downloadFile(URL+imageNames[2], imageNames[2])
-	if err != nil {
-		log.Fatal("Unable to download file")
-	}
-	imageNames[0] = "./championImages/" + imageNames[0]
-	imageNames[1] = "./championImages/" + imageNames[1]
-	imageNames[2] = "./championImages/" + imageNames[2]
-
-	fileImageName := mergeImages(imageNames)
-
-	file, _ := os.Open(fileImageName)
-	file2, _ := os.Open("./assets/" + rankFileName)
-
 	var files []*discordgo.File
+	file2, _ := os.Open("./assets/" + rankFileName)
 	files = append(files, &discordgo.File{
 		Name:        rankFileName,
 		ContentType: "image/png",
 		Reader:      file2,
 	})
-	files = append(files, &discordgo.File{
-		Name:        fileImageName,
-		ContentType: "image/png",
-		Reader:      file,
-	})
+
+	URL := "http://ddragon.leagueoflegends.com/cdn/12.2.1/img/champion/"
+	for n := 0; n < len(imageNames); n++ {
+		imageNames[n] += ".png"
+		if _, err := os.Stat("./championImages/" + imageNames[n]); errors.Is(err, os.ErrNotExist) {
+			err = downloadFile(URL+imageNames[n], imageNames[n])
+			if err != nil {
+				log.Fatal("Unable to download file")
+				return files
+			}
+		}
+		imageNames[n] = "./championImages/" + imageNames[n]
+	}
+
+	if len(imageNames) > 0 {
+		fileImageName := mergeImages(imageNames)
+		file, _ := os.Open(fileImageName)
+		files = append(files, &discordgo.File{
+			Name:        fileImageName,
+			ContentType: "image/png",
+			Reader:      file,
+		})
+	}
 
 	return files
 }
@@ -322,7 +301,6 @@ func formatMatchStats(matchedStats []MatchResults, puuid string) PlayerMatchStat
 				Kills:       participant.Kills,
 				Deaths:      participant.Deaths,
 				Assists:     participant.Assists,
-				Role:        participant.IndividualPosition,
 				Wins:        win,
 				Loss:        loss,
 				GamesPlayed: 1,
@@ -335,7 +313,6 @@ func formatMatchStats(matchedStats []MatchResults, puuid string) PlayerMatchStat
 					playermatchstats.PlayerChampions[k].Kills += participant.Kills
 					playermatchstats.PlayerChampions[k].Deaths += participant.Deaths
 					playermatchstats.PlayerChampions[k].Assists += participant.Assists
-					playermatchstats.PlayerChampions[k].Role = participant.IndividualPosition
 					playermatchstats.PlayerChampions[k].Wins += win
 					playermatchstats.PlayerChampions[k].Loss += loss
 					playermatchstats.PlayerChampions[k].GamesPlayed++
@@ -348,7 +325,6 @@ func formatMatchStats(matchedStats []MatchResults, puuid string) PlayerMatchStat
 						Kills:       participant.Kills,
 						Deaths:      participant.Deaths,
 						Assists:     participant.Assists,
-						Role:        participant.IndividualPosition,
 						Wins:        win,
 						Loss:        loss,
 						GamesPlayed: 1,
@@ -415,7 +391,7 @@ func getFavouriteRoleName(pHolder int) string {
 		}
 	case 4:
 		{
-			return "SUPPORT"
+			return "UTILITY"
 		}
 	}
 	return "UNKOWN"
@@ -426,57 +402,39 @@ func getTop3Champions(playerMatchStats PlayerMatchStats) []*PlayerChampions {
 	if len(playerMatchStats.PlayerChampions) < 1 {
 		return playerChampions
 	}
-	playerChampion := playerMatchStats.PlayerChampions[0]
-	playerChampion2 := &PlayerChampions{
-		GamesPlayed: 0,
-	}
-	playerChampion3 := &PlayerChampions{
-		GamesPlayed: 0,
+	var playerChampion []*PlayerChampions
+	for k := 0; k < 3; k++ {
+		playerChampion = append(playerChampion, &PlayerChampions{
+			GamesPlayed: 0,
+		})
 	}
 
 	for k := 1; k < len(playerMatchStats.PlayerChampions); k++ {
-		if playerChampion.GamesPlayed <= playerMatchStats.PlayerChampions[k].GamesPlayed {
-			playerChampion = playerMatchStats.PlayerChampions[k]
+		if playerChampion[0].GamesPlayed <= playerMatchStats.PlayerChampions[k].GamesPlayed {
+			playerChampion[0] = playerMatchStats.PlayerChampions[k]
 		}
 	}
 	for k := 0; k < len(playerMatchStats.PlayerChampions); k++ {
-		if playerMatchStats.PlayerChampions[k].Name != playerChampion.Name {
-			if playerChampion2.GamesPlayed <= playerMatchStats.PlayerChampions[k].GamesPlayed {
-				playerChampion2 = playerMatchStats.PlayerChampions[k]
+		if playerMatchStats.PlayerChampions[k].Name != playerChampion[0].Name {
+			if playerChampion[1].GamesPlayed <= playerMatchStats.PlayerChampions[k].GamesPlayed {
+				playerChampion[1] = playerMatchStats.PlayerChampions[k]
 			}
 		}
 	}
 	for k := 0; k < len(playerMatchStats.PlayerChampions); k++ {
-		if playerMatchStats.PlayerChampions[k].Name != playerChampion.Name && playerMatchStats.PlayerChampions[k].Name != playerChampion2.Name {
-			if playerChampion3.GamesPlayed <= playerMatchStats.PlayerChampions[k].GamesPlayed {
-				playerChampion3 = playerMatchStats.PlayerChampions[k]
+		if playerMatchStats.PlayerChampions[k].Name != playerChampion[0].Name && playerMatchStats.PlayerChampions[k].Name != playerChampion[1].Name {
+			if playerChampion[2].GamesPlayed <= playerMatchStats.PlayerChampions[k].GamesPlayed {
+				playerChampion[2] = playerMatchStats.PlayerChampions[k]
 			}
 		}
 	}
-
-	playerChampions = append(playerChampions, playerChampion)
-	playerChampions = append(playerChampions, playerChampion2)
-	playerChampions = append(playerChampions, playerChampion3)
+	for k := 0; k < 3; k++ {
+		if playerChampion[k].GamesPlayed > 0 {
+			playerChampions = append(playerChampions, playerChampion[k])
+		}
+	}
 	return playerChampions
 }
-
-// func countChamps() {
-
-// 	duplicate_frequency := make(map[string]int)
-
-// 	for _, item := range list {
-// 		// check if the item/element exist in the duplicate_frequency map
-
-// 		_, exist := duplicate_frequency[item]
-
-// 		if exist {
-// 			duplicate_frequency[item] += 1 // increase counter by 1 if already in the map
-// 		} else {
-// 			duplicate_frequency[item] = 1 // else start counting from 1
-// 		}
-// 	}
-// 	return duplicate_frequency
-// }
 
 func getRankedAsset(rankedStats RankedInfo) (filename string, rankedType int) {
 	for n := 0; n < len(rankedStats); n++ {
@@ -533,21 +491,39 @@ func mergeImages(imageName []string) string {
 		}
 		img = append(img, img1)
 	}
-	sp := image.Point{(img[0].Bounds().Dx() - 20), 0}
-	sp2 := image.Point{(img[1].Bounds().Dx() - 20), 0}
 
-	r2 := image.Rectangle{sp, sp.Add(img[1].Bounds().Size())}
+	var sp3 image.Point
+	var sp image.Point
+	if len(img) == 3 {
+		sp = image.Point{(img[0].Bounds().Dx() - 20), 0}
+		sp3 = image.Point{sp.X + sp.X, 0}
+	} else if len(img) == 2 {
+		sp = image.Point{(img[0].Bounds().Dx()), 0}
+		sp3 = image.Point{sp.X, 0}
+	} else {
+		sp = image.Point{(img[0].Bounds().Dx()), 0}
+		sp3 = image.Point{0, 0}
+	}
+	r2 := image.Rectangle{sp, sp.Add(img[0].Bounds().Size())}
 
-	sp3 := image.Point{sp.X + sp2.X, 0}
-
-	r3 := image.Rectangle{sp3, sp3.Add(img[2].Bounds().Size())}
-	r3.Max.X = 299
+	r3 := image.Rectangle{sp3, sp3.Add(img[0].Bounds().Size())} //all images are same size anyways
+	if len(img) == 3 {
+		r3.Max.X = 299 //Discord embeed width will be constrained if the image is 300px in width or greater
+	} else if len(img) == 2 {
+		r3.Max.X = sp.X + sp.X
+	} else {
+		r3.Max.X = sp.X
+	}
 	r := image.Rectangle{image.Point{0, 0}, r3.Max}
 
 	rgba := image.NewRGBA(r)
 	draw.Draw(rgba, img[0].Bounds(), img[0], image.Point{0, 0}, draw.Src)
-	draw.Draw(rgba, r2, img[1], image.Point{0, 0}, draw.Src)
-	draw.Draw(rgba, r3, img[2], image.Point{0, 0}, draw.Src)
+	if len(img) == 2 {
+		draw.Draw(rgba, r2, img[1], image.Point{0, 0}, draw.Src)
+	} else if len(img) == 3 {
+		draw.Draw(rgba, r2, img[1], image.Point{0, 0}, draw.Src)
+		draw.Draw(rgba, r3, img[2], image.Point{0, 0}, draw.Src)
+	}
 
 	out, err := os.Create("./output.png")
 	if err != nil {
@@ -615,7 +591,7 @@ func formatPlayerRankedStats(rankedStats RankedInfo) string {
 	for n := 0; n < len(rankedStats); n++ {
 		if rankedStats[n].QueueType == "RANKED_SOLO_5x5" || rankedStats[n].QueueType == "RANKED_TEAM_5x5 " {
 			return rankedStats[n].Tier + " " + rankedStats[n].Rank +
-				" with " + strconv.Itoa(rankedStats[n].LeaguePoints) + " LP. Season wins/loss: " + strconv.Itoa(rankedStats[n].Wins) + " wins and " + strconv.Itoa(rankedStats[n].Losses) + " losses." + strconv.Itoa((rankedStats[n].Wins*100)/(rankedStats[n].Wins+rankedStats[n].Losses)) + "%"
+				" with " + strconv.Itoa(rankedStats[n].LeaguePoints) + " LP. Season W/L: " + strconv.Itoa(rankedStats[n].Wins) + " wins and " + strconv.Itoa(rankedStats[n].Losses) + " losses. WR: " + strconv.Itoa((rankedStats[n].Wins*100)/(rankedStats[n].Wins+rankedStats[n].Losses)) + "%"
 		} else {
 			return "Currently unranked."
 		}
