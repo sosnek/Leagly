@@ -88,9 +88,13 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	if args[0] == "!test" {
+	if args[0] == "!mastery" {
 		if validateName(args) {
-			s.ChannelMessageSend(m.ChannelID, query.GetChampion(args[1]))
+			send, err := query.MasteryPlayer(args[1])
+			if err != nil {
+				s.ChannelMessageSend(m.ChannelID, err.Error())
+			}
+			s.ChannelMessageSendComplex(m.ChannelID, send)
 		}
 		return
 	}
@@ -210,7 +214,8 @@ func handleHelp(s *discordgo.Session, m *discordgo.MessageCreate) {
 	msg = fmt.Sprintf("%s\t%s\n", msg, "!help - shows all available commands")
 	msg = fmt.Sprintf("%s\t%s\n", msg, "!live <playername> - Checks to see if the player is in a game")
 	msg = fmt.Sprintf("%s\t%s\n", msg, "!lastmatch <playername> - shows the players last match stats")
-	msg = fmt.Sprintf("%s\t%s\n", msg, "!lookup <playername> - shows ranked history + mastery stats of player```")
+	msg = fmt.Sprintf("%s\t%s\n", msg, "!lookup <playername> - shows ranked history of player```")
+	//msg = fmt.Sprintf("%s\t%s\n", msg, "!mastery <playername> - shows mastery stats of player```")
 
 	s.ChannelMessageSend(m.ChannelID, msg)
 }

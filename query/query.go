@@ -86,7 +86,7 @@ type Champion struct {
 
 const RANKED_SOLO = 420
 const RANKED_FLEX = 440
-const RATE_LIMIT = 30
+const MATCH_LIMIT = 30
 
 ///
 ///

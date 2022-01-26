@@ -84,8 +84,7 @@ func LookupPlayer(playerName string) (send *discordgo.MessageSend, err error) {
 	if exists {
 		rankedInfo := getRankedInfo(accInfo.Id)
 		fileName, rankedType := getRankedAsset(RankedInfo(rankedInfo))
-		//masteryStats := getMasteryData(accInfo.Id)
-		matchIDs, exist := getMatchID(accInfo.Puuid, RATE_LIMIT)
+		matchIDs, exist := getMatchID(accInfo.Puuid, MATCH_LIMIT)
 		if len(matchIDs) < 1 {
 			return send, errors.New("No match history found for " + playerName)
 		}
@@ -115,7 +114,6 @@ func LookupPlayer(playerName string) (send *discordgo.MessageSend, err error) {
 				top3ChampNames = append(top3ChampNames, top3ChampStats[k].Name)
 			}
 
-			//masteryStatsFormatted := formatMasteries(masteryStats)
 			//fmt.Println(matchStatsFormatted)
 
 			embed = formatPlayerLookupEmbedFields(embed, playermatchstats, top3ChampNames)
@@ -125,7 +123,19 @@ func LookupPlayer(playerName string) (send *discordgo.MessageSend, err error) {
 		}
 	}
 	log.Println("Unable to get accInfo for: " + playerName)
-	return send, err
+	return send, errors.New("Unable to get accInfo for: " + playerName)
+}
+
+func MasteryPlayer(playerName string) (send *discordgo.MessageSend, err error) {
+	accInfo, exists := getAccountInfo(playerName)
+	send = &discordgo.MessageSend{}
+	if exists {
+		masteryStats := getMasteryData(accInfo.Id)
+		//masteryStatsFormatted := formatMasteries(masteryStats)
+		fmt.Println(masteryStats)
+	}
+	log.Println("Unable to get accInfo for: " + playerName)
+	return send, errors.New("Unable to get accInfo for: " + playerName)
 }
 
 func DeleteImages(fileNames []string) {
@@ -156,10 +166,34 @@ func GetChampion(champID string) string {
 
 func formatPlayerLookupEmbedFields(embed *discordgo.MessageEmbed, playerMatchStats PlayerMatchStats, top3Champs []string) *discordgo.MessageEmbed {
 
+	if len(top3Champs) < 1 {
+		return embed
+	}
 	champData := []string{"\u200b", "\u200b", "\u200b", "\u200b", "\u200b", "\u200b"}
 
-	KDA1 := fmt.Sprintf("  %.1f KDA", 3.20) //@@@@@@@@@@@@@@
-	KDA2 := fmt.Sprintf("  %.1f KDA", 4.1)  //@@@@@@@@@@@@@@@@@@@@@@
+	var totalkills int
+	var totalDeaths int
+	var totalWins int
+	var totalLoss int
+	var totalAssist int
+	for k := 0; k < len(playerMatchStats.PlayerChampions); k++ {
+		totalkills += playerMatchStats.PlayerChampions[k].Kills
+		totalDeaths += playerMatchStats.PlayerChampions[k].Deaths
+		totalWins += playerMatchStats.PlayerChampions[k].Wins
+		totalLoss += playerMatchStats.PlayerChampions[k].Loss
+		totalAssist += playerMatchStats.PlayerChampions[k].Assists
+	}
+
+	// colourCypher := "css"
+	winRate := (totalWins * 100) / (totalWins + totalLoss)
+	// if winRate < 50 {
+	// 	colourCypher = "diff "
+	// }
+	pickRate1, pickRate2 := getRole(playerMatchStats)
+	KDA := fmt.Sprintf("```%dG %dW %dL (%d%%)\t \t %.1f / %.1f / %.1f KDA```", totalWins+totalLoss, totalWins, totalLoss, winRate,
+		float64(totalkills/(totalWins+totalLoss)), float64(totalDeaths/(totalWins+totalLoss)), float64(totalAssist/(totalWins+totalLoss)))
+	KDA1 := fmt.Sprintf("  Pick Rate %d%%", (pickRate1*100)/(totalWins+totalLoss))
+	KDA2 := fmt.Sprintf("  Pick Rate %d%%", (pickRate2*100)/(totalWins+totalLoss))
 
 	for j := 0; j < len(top3Champs); j++ {
 		for k := 0; k < len(playerMatchStats.PlayerChampions); k++ {
@@ -182,11 +216,11 @@ func formatPlayerLookupEmbedFields(embed *discordgo.MessageEmbed, playerMatchSta
 		},
 		{
 			Name:  "Past 10 games stats: \t\t",
-			Value: "```TODO: KDA: ```\t\t", //@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+			Value: KDA,
 		},
 		{
 			Name:   "Primary Role:",
-			Value:  "```" + playerMatchStats.Role.PreferredRole1 + KDA1 + "```", // % picked?
+			Value:  "```" + playerMatchStats.Role.PreferredRole1 + KDA1 + "```",
 			Inline: true,
 		},
 		{
@@ -195,9 +229,8 @@ func formatPlayerLookupEmbedFields(embed *discordgo.MessageEmbed, playerMatchSta
 			Inline: true,
 		},
 		{
-			Name:   "\u200b",
-			Value:  "\u200b",
-			Inline: true,
+			Name:  "\u200b",
+			Value: "Top 3 Recent Champions",
 		},
 		{
 			Name:   champData[3],
@@ -358,8 +391,8 @@ func formatMatchStats(matchedStats []MatchResults, puuid string) PlayerMatchStat
 
 func getFavouriteRole(playerRoles Role, ignore int) int {
 	largest := 0
-	var pHolder int
-	for j := 1; j < len(playerRoles.RoleCount); j++ {
+	pHolder := -1
+	for j := 0; j < len(playerRoles.RoleCount); j++ {
 		if j == ignore {
 			continue
 		}
@@ -395,6 +428,21 @@ func getFavouriteRoleName(pHolder int) string {
 		}
 	}
 	return "UNKOWN"
+}
+
+func getRole(role PlayerMatchStats) (int, int) {
+	roles := []string{"TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"}
+	var pr int
+	var pr2 int
+	for k := 0; k < len(roles); k++ {
+		if role.Role.PreferredRole1 == roles[k] {
+			pr = role.Role.RoleCount[k]
+		}
+		if role.Role.PreferredRole2 == roles[k] {
+			pr2 = role.Role.RoleCount[k]
+		}
+	}
+	return pr, pr2
 }
 
 func getTop3Champions(playerMatchStats PlayerMatchStats) []*PlayerChampions {
