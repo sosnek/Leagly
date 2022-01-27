@@ -46,7 +46,7 @@ type PlayerChampions struct {
 
 //!lastmatch player
 func GetLastMatch(playerName string) (result string) {
-	log.Println("!lastmatch " + playerName + "\t" + time.Now().UTC().String())
+	log.Println("!lastmatch " + playerName)
 	accInfo, exists := getAccountInfo(playerName)
 	if exists {
 		matchID, exist := getMatchID(accInfo.Puuid, 1)
@@ -62,7 +62,7 @@ func GetLastMatch(playerName string) (result string) {
 
 //!live player
 func IsInGame(playerName string) (result string) {
-	log.Println("!live " + playerName + "\t" + time.Now().UTC().String())
+	log.Println("!live " + playerName)
 	accInfo, exists := getAccountInfo(playerName)
 	if exists {
 		liveGameInfo := getLiveGame(accInfo.Id)
@@ -79,22 +79,22 @@ func IsInGame(playerName string) (result string) {
 
 //!lookup player
 func LookupPlayer(playerName string) (send *discordgo.MessageSend, err error) {
-	log.Println("!lookup " + playerName + "\t" + time.Now().UTC().String())
+	log.Println("!lookup " + playerName)
 	accInfo, exists := getAccountInfo(playerName)
 	send = &discordgo.MessageSend{}
 	if exists {
 		rankedInfo := getRankedInfo(accInfo.Id)
 		fileName, rankedType := getRankedAsset(RankedInfo(rankedInfo))
-		matchIDs, exist := getMatchID(accInfo.Puuid, MATCH_LIMIT)
+		matchIDs, exist := getMatchID(accInfo.Puuid, MATCH_LIMIT) // Request MATCH_LIMIT amount of match ID's to be later filtered out for ranked ones
 		if len(matchIDs) < 1 {
 			return send, errors.New("No match history found for " + playerName)
 		}
 
 		if exist {
 			var matchStatsSlice []MatchResults
-			for n, k := 0, 0; n < len(matchIDs) && k < 10; n++ {
+			for n, k := 0, 0; n < len(matchIDs) && k < 10; n++ { // Get 10 games
 				newMatch := getMatch(matchIDs[n])
-				if newMatch.Info.QueueId == RANKED_SOLO || newMatch.Info.QueueId == RANKED_FLEX {
+				if newMatch.Info.QueueId == RANKED_SOLO || newMatch.Info.QueueId == RANKED_FLEX { // But only if they are ranked_solo or ranked_flex games
 					matchStatsSlice = append(matchStatsSlice, newMatch)
 					k++
 				}
@@ -125,7 +125,6 @@ func LookupPlayer(playerName string) (send *discordgo.MessageSend, err error) {
 }
 
 func MasteryPlayer(playerName string) (send *discordgo.MessageSend, err error) {
-	log.Println("!mastery " + playerName + "\t" + time.Now().UTC().String())
 	accInfo, exists := getAccountInfo(playerName)
 	send = &discordgo.MessageSend{}
 	if exists {
@@ -154,10 +153,11 @@ func createMessageSend(embed *discordgo.MessageEmbed, files []*discordgo.File) *
 	return send
 }
 
+// An object is instatiated on program start up containing all the names of all the champions and their ID's. Use this method to retrieve a name by ID
 func GetChampion(champID string) string {
 	for k, v := range champ3 {
 		if champID == v.Key {
-			return k
+			return k // K is the champion name
 		}
 	}
 	return champID
@@ -194,7 +194,7 @@ func formatPlayerLookupEmbedFields(embed *discordgo.MessageEmbed, playerMatchSta
 	KDA1 := fmt.Sprintf("  Pick Rate %d%%", (pickRate1*100)/(totalWins+totalLoss))
 	KDA2 := fmt.Sprintf("  Pick Rate %d%%", (pickRate2*100)/(totalWins+totalLoss))
 
-	for j := 0; j < len(top3Champs); j++ {
+	for j := 0; j < len(top3Champs); j++ { // This loop will iterate over the match history object that contains combined duplicate champion data. Creates unique data such as KDA per champion and win rates
 		for k := 0; k < len(playerMatchStats.PlayerChampions); k++ {
 			if top3Champs[j] == playerMatchStats.PlayerChampions[k].Name {
 				if playerMatchStats.PlayerChampions[k].Deaths == 0 {
@@ -288,7 +288,7 @@ func formatEmbedImages(embed *discordgo.MessageEmbed, imageNames []string, rankF
 	for n := 0; n < len(imageNames); n++ {
 		imageNames[n] += ".png"
 		if _, err := os.Stat("./championImages/" + imageNames[n]); errors.Is(err, os.ErrNotExist) {
-			err = downloadFile(URL+imageNames[n], imageNames[n])
+			err = downloadFile(URL+imageNames[n], imageNames[n]) //champion icons are only downloaded if they don't exist in the "championImages" directory
 			if err != nil {
 				log.Fatal("Unable to download file")
 				return files
@@ -310,6 +310,8 @@ func formatEmbedImages(embed *discordgo.MessageEmbed, imageNames []string, rankF
 	return files
 }
 
+//This method iterates through the bulk matchresult struct and combine the select players game data by champion.
+//A new struct will be returned that contains match results by unique champion
 func formatMatchStats(matchedStats []MatchResults, puuid string) PlayerMatchStats {
 	var win int
 	var loss int
@@ -340,7 +342,7 @@ func formatMatchStats(matchedStats []MatchResults, puuid string) PlayerMatchStat
 		} else {
 			counter := len(playermatchstats.PlayerChampions)
 			for k := 0; k < counter; k++ {
-				set[playermatchstats.PlayerChampions[k].Name] = struct{}{}
+				set[playermatchstats.PlayerChampions[k].Name] = struct{}{} //created a map to keep track of the champions that have been so far looked through
 				if playermatchstats.PlayerChampions[k].Name == participant.ChampionName {
 					playermatchstats.PlayerChampions[k].Kills += participant.Kills
 					playermatchstats.PlayerChampions[k].Deaths += participant.Deaths
@@ -350,7 +352,7 @@ func formatMatchStats(matchedStats []MatchResults, puuid string) PlayerMatchStat
 					playermatchstats.PlayerChampions[k].GamesPlayed++
 					break
 				}
-				if _, ok := set[participant.ChampionName]; ok {
+				if _, ok := set[participant.ChampionName]; ok { //if our map doesn't contain the champion the loop is iterating over, we append it to the object
 				} else {
 					playermatchstats.PlayerChampions = append(playermatchstats.PlayerChampions, &PlayerChampions{
 						Name:        participant.ChampionName,
@@ -388,9 +390,10 @@ func formatMatchStats(matchedStats []MatchResults, puuid string) PlayerMatchStat
 	return playermatchstats
 }
 
+// the following 3 methods are my lazy way of determining role and favourite role
 func getFavouriteRole(playerRoles Role, ignore int) int {
 	largest := 0
-	pHolder := -1
+	pHolder := -1 // set to -1 to ensure secondary role isn't duplicated. (will be skipped in the method below)
 	for j := 0; j < len(playerRoles.RoleCount); j++ {
 		if j == ignore {
 			continue
@@ -446,7 +449,7 @@ func getRole(role PlayerMatchStats) (int, int) {
 
 func getTop3Champions(playerMatchStats PlayerMatchStats) []*PlayerChampions {
 	var playerChampions []*PlayerChampions
-	if len(playerMatchStats.PlayerChampions) < 1 {
+	if len(playerMatchStats.PlayerChampions) < 1 { // We return here if no champion data exists, but we still want to create an embed object later on
 		return playerChampions
 	}
 	var playerChampion []*PlayerChampions
@@ -455,8 +458,8 @@ func getTop3Champions(playerMatchStats PlayerMatchStats) []*PlayerChampions {
 			GamesPlayed: 0,
 		})
 	}
-
-	for k := 1; k < len(playerMatchStats.PlayerChampions); k++ {
+	// At this point duplicate champions in match history has been combined. Now the program will choose the top 3 champions determined by frequency
+	for k := 0; k < len(playerMatchStats.PlayerChampions); k++ {
 		if playerChampion[0].GamesPlayed <= playerMatchStats.PlayerChampions[k].GamesPlayed {
 			playerChampion[0] = playerMatchStats.PlayerChampions[k]
 		}
@@ -483,6 +486,7 @@ func getTop3Champions(playerMatchStats PlayerMatchStats) []*PlayerChampions {
 	return playerChampions
 }
 
+// Ranked icon images are locally stored. This method is used to determine which ranked icon image we need.
 func getRankedAsset(rankedStats RankedInfo) (filename string, rankedType int) {
 	for n := 0; n < len(rankedStats); n++ {
 		if rankedStats[n].QueueType == "RANKED_SOLO_5x5" || rankedStats[n].QueueType == "RANKED_TEAM_5x5 " {
@@ -511,6 +515,8 @@ func getRankedAsset(rankedStats RankedInfo) (filename string, rankedType int) {
 	return "UNRANKED.png", 0
 }
 
+// When calling the Riot API for match data, we get a large json object with match data of all 10 players.
+// This method is used to filter out each player and only returns an object of the one we're looking for
 func parseParticipant(puuid string, matchresults MatchResults) Participants {
 	var i int
 	for n := 0; n < len(matchresults.Info.Participants); n++ {
@@ -522,6 +528,10 @@ func parseParticipant(puuid string, matchresults MatchResults) Participants {
 	return matchresults.Info.Participants[i]
 }
 
+// Because discord embeds only support 2x2 images at a maximum, I decided to use a method
+// that combines 3 images into one to be use in a 1x3 format. Unfortunately discord also
+// has limitations on image size. Embed will be constrained if the image is greater than 300px
+// As a result, i limit 3 images combined to be at a maximum of 299 px in length :D
 func mergeImages(imageName []string) string {
 
 	var imgFile []*os.File

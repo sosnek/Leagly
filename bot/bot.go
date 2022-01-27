@@ -46,13 +46,13 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	messageContent := m.Content
 	args := createName(strings.Fields(messageContent))
-
 	if len(args) < 1 {
 		return
 	}
 
 	// !help
 	if m.Content == "!help" {
+		log.Println(m.Author.Username + ": !help")
 		handleHelp(s, m)
 		return
 	}
@@ -65,6 +65,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// !lastmatch - Searches and displays stats from last league game played
 	if args[0] == "!lastmatch" {
 		if validateName(args) {
+			log.Println(m.Author.Username + " : !lastmatch " + args[1])
 			s.ChannelMessageSend(m.ChannelID, query.GetLastMatch(args[1]))
 		}
 		return
@@ -73,6 +74,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// !live - checks if player is currently in a game
 	if args[0] == "!live" {
 		if validateName(args) {
+			log.Println(m.Author.Username + " : !live " + args[1])
 			s.ChannelMessageSend(m.ChannelID, query.IsInGame(args[1]))
 		}
 		return
@@ -81,6 +83,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	//lookup
 	if args[0] == "!lookup" {
 		if validateName(args) {
+			log.Println(m.Author.Username + " : !lookup " + args[1])
 			send, err := query.LookupPlayer(args[1])
 			if err != nil {
 				log.Println(err)
@@ -94,6 +97,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	if args[0] == "!mastery" {
 		if validateName(args) {
+			log.Println(m.Author.Username + " : !mastery " + args[1])
 			send, err := query.MasteryPlayer(args[1])
 			if err != nil {
 				log.Println(err)
@@ -127,6 +131,5 @@ func handleHelp(s *discordgo.Session, m *discordgo.MessageCreate) {
 	msg = fmt.Sprintf("%s\t%s\n", msg, "!lastmatch <playername> - shows the players last match stats")
 	msg = fmt.Sprintf("%s\t%s\n", msg, "!lookup <playername> - shows ranked history of player```")
 	//msg = fmt.Sprintf("%s\t%s\n", msg, "!mastery <playername> - shows mastery stats of player```")
-
 	s.ChannelMessageSend(m.ChannelID, msg)
 }
