@@ -46,7 +46,7 @@ type PlayerChampions struct {
 
 //!lastmatch player
 func GetLastMatch(playerName string) (result string) {
-
+	log.Println("!lastmatch " + playerName + "\t" + time.Now().UTC().String())
 	accInfo, exists := getAccountInfo(playerName)
 	if exists {
 		matchID, exist := getMatchID(accInfo.Puuid, 1)
@@ -56,14 +56,14 @@ func GetLastMatch(playerName string) (result string) {
 		}
 		log.Println("Unable to get matchID for: " + playerName)
 	}
+	log.Println("Error getting account info")
 	return "Sorry, something went wrong"
 }
 
 //!live player
 func IsInGame(playerName string) (result string) {
-
+	log.Println("!live " + playerName + "\t" + time.Now().UTC().String())
 	accInfo, exists := getAccountInfo(playerName)
-
 	if exists {
 		liveGameInfo := getLiveGame(accInfo.Id)
 		if liveGameInfo.Status.Status_code == 0 {
@@ -73,12 +73,13 @@ func IsInGame(playerName string) (result string) {
 		}
 		return playerName + " is not currently in-game."
 	}
+	log.Println("Error getting account info")
 	return "Sorry, something went wrong"
 }
 
 //!lookup player
 func LookupPlayer(playerName string) (send *discordgo.MessageSend, err error) {
-
+	log.Println("!lookup " + playerName + "\t" + time.Now().UTC().String())
 	accInfo, exists := getAccountInfo(playerName)
 	send = &discordgo.MessageSend{}
 	if exists {
@@ -114,19 +115,17 @@ func LookupPlayer(playerName string) (send *discordgo.MessageSend, err error) {
 				top3ChampNames = append(top3ChampNames, top3ChampStats[k].Name)
 			}
 
-			//fmt.Println(matchStatsFormatted)
-
 			embed = formatPlayerLookupEmbedFields(embed, playermatchstats, top3ChampNames)
 			files := formatEmbedImages(embed, top3ChampNames, fileName)
 			send = createMessageSend(embed, files)
 			return send, err
 		}
 	}
-	log.Println("Unable to get accInfo for: " + playerName)
 	return send, errors.New("Unable to get accInfo for: " + playerName)
 }
 
 func MasteryPlayer(playerName string) (send *discordgo.MessageSend, err error) {
+	log.Println("!mastery " + playerName + "\t" + time.Now().UTC().String())
 	accInfo, exists := getAccountInfo(playerName)
 	send = &discordgo.MessageSend{}
 	if exists {
@@ -637,6 +636,9 @@ func formatMasteries(masteryStats Mastery) string {
 
 func formatPlayerRankedStats(rankedStats RankedInfo) string {
 	for n := 0; n < len(rankedStats); n++ {
+		if rankedStats[n].QueueType == "RANKED_TFT_PAIRS" {
+			continue
+		}
 		if rankedStats[n].QueueType == "RANKED_SOLO_5x5" || rankedStats[n].QueueType == "RANKED_TEAM_5x5 " {
 			return rankedStats[n].Tier + " " + rankedStats[n].Rank +
 				" with " + strconv.Itoa(rankedStats[n].LeaguePoints) + " LP. Season W/L: " + strconv.Itoa(rankedStats[n].Wins) + " wins and " + strconv.Itoa(rankedStats[n].Losses) + " losses. WR: " + strconv.Itoa((rankedStats[n].Wins*100)/(rankedStats[n].Wins+rankedStats[n].Losses)) + "%"

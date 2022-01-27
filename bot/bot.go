@@ -4,6 +4,7 @@ import (
 	"Leagly/config" //importing our config package which we have created above
 	"Leagly/query"
 	"fmt" //to print errors
+	"log"
 	"os"
 	"os/signal"
 	"strings"
@@ -19,6 +20,7 @@ func ConnectToDiscord() {
 
 	leaglyBot, err := discordgo.New("Bot " + config.Token)
 	if err != nil {
+		log.Println(err)
 		panic(err)
 	}
 
@@ -28,6 +30,7 @@ func ConnectToDiscord() {
 
 	err = leaglyBot.Open()
 	if err != nil {
+		log.Println(err)
 		panic(err)
 	}
 
@@ -80,6 +83,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		if validateName(args) {
 			send, err := query.LookupPlayer(args[1])
 			if err != nil {
+				log.Println(err)
 				s.ChannelMessageSend(m.ChannelID, err.Error())
 			}
 			s.ChannelMessageSendComplex(m.ChannelID, send)
@@ -92,102 +96,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		if validateName(args) {
 			send, err := query.MasteryPlayer(args[1])
 			if err != nil {
+				log.Println(err)
 				s.ChannelMessageSend(m.ChannelID, err.Error())
-			}
-			s.ChannelMessageSendComplex(m.ChannelID, send)
-		}
-		return
-	}
-
-	if args[0] == "!g" {
-		if validateName(args) {
-			embed := &discordgo.MessageEmbed{
-				URL:         "https://www.youtube.com/",
-				Color:       000255000,
-				Title:       "Lets",
-				Description: "Gold III with 68 LP. This season they have a total",
-				Image: &discordgo.MessageEmbedImage{
-					URL:    "attachment://output.png",
-					Width:  64,
-					Height: 16,
-				},
-				Author: &discordgo.MessageEmbedAuthor{
-					Name:    "Sosnek",
-					IconURL: "https://i.imgur.com/AfFp7pu.png",
-					URL:     "https://na.op.gg/summoner/userName=lets",
-				},
-				Thumbnail: &discordgo.MessageEmbedThumbnail{
-					URL:    "attachment://Emblem_Challenger.png",
-					Height: 32,
-					Width:  32,
-				},
-				Fields: []*discordgo.MessageEmbedField{
-					{
-						Name:  "GOLD III\t\t",
-						Value: "W/L Ratio : 52%\t\t",
-					},
-					{
-						Name:   "Primary Role:",
-						Value:  "ADC",
-						Inline: true,
-					},
-					{
-						Name:   "\u200b",
-						Value:  "\u200b",
-						Inline: false,
-					},
-					{
-						Name:   "Akshan",
-						Value:  "67%(2W/1L)",
-						Inline: true,
-					},
-					{
-						Name:   "Aurelion Sol",
-						Value:  "67%(2W/1L)",
-						Inline: true,
-					},
-					{
-						Name:   "Leblanc",
-						Value:  "67%(2W/1L)",
-						Inline: true,
-					},
-				},
-				Footer: &discordgo.MessageEmbedFooter{
-					Text:    "Some footer text here",
-					IconURL: "https://i.imgur.com/AfFp7pu.png",
-				},
-			}
-			//might have to do only 2 champions because :
-			/*
-
-				embed width will only be constrained to image width if the image is at least 300px wide
-				otherwise the text will expand it, like youve done with your footer
-				thumbnails are not factored into this at all, only the big image at the bottom
-
-				embed image size: 400x300
-				embed thumbnail size: 80x80
-				if the embed image is at least 300 pixels wide after resizing, the embed size will shrink to the size of the image
-				*from discohook discord
-			*/
-
-			file, _ := os.Open("./output.png")
-			file2, _ := os.Open("./assets/Emblem_Challenger.png")
-
-			var files []*discordgo.File
-			files = append(files, &discordgo.File{
-				Name:        "Emblem_Challenger.png",
-				ContentType: "image/png",
-				Reader:      file2,
-			})
-			files = append(files, &discordgo.File{
-				Name:        "output.png",
-				ContentType: "image/png",
-				Reader:      file,
-			})
-
-			send := &discordgo.MessageSend{
-				Embed: embed,
-				Files: files,
 			}
 			s.ChannelMessageSendComplex(m.ChannelID, send)
 		}
@@ -204,6 +114,7 @@ func createName(args []string) []string {
 
 func validateName(name []string) bool {
 	if len(name) < 2 {
+		log.Panicln("Name not found in args list")
 		return false
 	}
 	return len([]rune(name[1])) > 0
