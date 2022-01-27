@@ -486,7 +486,7 @@ func getTop3Champions(playerMatchStats PlayerMatchStats) []*PlayerChampions {
 // Ranked icon images are locally stored. This method is used to determine which ranked icon image we need.
 func getRankedAsset(rankedStats RankedInfo) (filename string, rankedType int) {
 	for n := 0; n < len(rankedStats); n++ {
-		if rankedStats[n].QueueType == "RANKED_SOLO_5x5" || rankedStats[n].QueueType == "RANKED_TEAM_5x5 " {
+		if rankedStats[n].QueueType == "RANKED_SOLO_5x5" || rankedStats[n].QueueType == "RANKED_TEAM_5x5" || rankedStats[n].QueueType == "RANKED_FLEX_SR" {
 			switch {
 			case rankedStats[n].Tier == "IRON":
 				return "Emblem_Iron.png", n
@@ -646,7 +646,7 @@ func formatPlayerRankedStats(rankedStats RankedInfo) string {
 		if rankedStats[n].QueueType == "RANKED_TFT_PAIRS" {
 			continue
 		}
-		if rankedStats[n].QueueType == "RANKED_SOLO_5x5" || rankedStats[n].QueueType == "RANKED_TEAM_5x5 " {
+		if rankedStats[n].QueueType == "RANKED_SOLO_5x5" || rankedStats[n].QueueType == "RANKED_TEAM_5x5 " || rankedStats[n].QueueType == "RANKED_FLEX_SR" {
 			return rankedStats[n].Tier + " " + rankedStats[n].Rank +
 				" with " + strconv.Itoa(rankedStats[n].LeaguePoints) + " LP. Season W/L: " + strconv.Itoa(rankedStats[n].Wins) + " wins and " + strconv.Itoa(rankedStats[n].Losses) + " losses. WR: " + strconv.Itoa((rankedStats[n].Wins*100)/(rankedStats[n].Wins+rankedStats[n].Losses)) + "%"
 		} else {
