@@ -46,7 +46,6 @@ type PlayerChampions struct {
 
 //!lastmatch player
 func GetLastMatch(playerName string) (result string) {
-	log.Println("!lastmatch " + playerName)
 	accInfo, exists := getAccountInfo(playerName)
 	if exists {
 		matchID, exist := getMatchID(accInfo.Puuid, 1)
@@ -62,7 +61,6 @@ func GetLastMatch(playerName string) (result string) {
 
 //!live player
 func IsInGame(playerName string) (result string) {
-	log.Println("!live " + playerName)
 	accInfo, exists := getAccountInfo(playerName)
 	if exists {
 		liveGameInfo := getLiveGame(accInfo.Id)
@@ -79,7 +77,6 @@ func IsInGame(playerName string) (result string) {
 
 //!lookup player
 func LookupPlayer(playerName string) (send *discordgo.MessageSend, err error) {
-	log.Println("!lookup " + playerName)
 	accInfo, exists := getAccountInfo(playerName)
 	send = &discordgo.MessageSend{}
 	if exists {
