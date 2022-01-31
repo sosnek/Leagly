@@ -33,13 +33,33 @@ func ConnectToDiscord() {
 		log.Println(err)
 		panic(err)
 	}
-
+	Initialize(leaglyBot)
 	fmt.Println("Leagly is now running")
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc
 
 	leaglyBot.Close()
+}
+
+func Initialize(s *discordgo.Session) {
+	query.InitializedChampStruct()
+	InitializeEmojis(s)
+}
+
+func InitializeEmojis(s *discordgo.Session) {
+	var emojis [][]*discordgo.Emoji
+	emoji, _ := s.GuildEmojis("937465588446539920")
+	emoji2, _ := s.GuildEmojis("937453232517693502")
+	emoji3, _ := s.GuildEmojis("937481122198200320")
+	emoji4, _ := s.GuildEmojis("937537071902503005")
+	emoji5, _ := s.GuildEmojis("937482778499485756")
+	emojis = append(emojis, emoji)
+	emojis = append(emojis, emoji2)
+	emojis = append(emojis, emoji3)
+	emojis = append(emojis, emoji4)
+	emojis = append(emojis, emoji5)
+	query.InitEmojis(emojis)
 }
 
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -62,11 +82,42 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
+	if args[0] == "!test" {
+		s.ChannelMessageSend(m.ChannelID, "<:"+args[1]+":"+query.GetEmoji(args[1])+">")
+		return
+	}
+	/* TODO : missing icons from these champs
+	<:Viego:>
+	<:Sett:>
+	<:Senna:>
+	<:MonkeyKing:> (Wukong)
+	<:Samira:>
+	<:Qiyana:>
+	<:Velkoz:>
+	<:Akshan:>
+	<:Gwen:>
+	<:Vex:>
+	<:Aphelios:>
+	<:Seraphine:>
+	<:Rell:>
+	*/
+
+	if args[0] == "!test2" {
+		query.Temp(s, m)
+		return
+	}
+
 	// !lastmatch - Searches and displays stats from last league game played
 	if args[0] == "!lastmatch" {
 		if validateName(args) {
+
 			log.Println(m.Author.Username + " : !lastmatch " + args[1])
-			s.ChannelMessageSend(m.ChannelID, query.GetLastMatch(args[1]))
+			send, err := query.GetLastMatch(args[1])
+			if err != nil {
+				log.Println(err)
+				s.ChannelMessageSend(m.ChannelID, err.Error())
+			}
+			s.ChannelMessageSendComplex(m.ChannelID, send)
 		}
 		return
 	}
@@ -118,7 +169,7 @@ func createName(args []string) []string {
 
 func validateName(name []string) bool {
 	if len(name) < 2 {
-		log.Panicln("Name not found in args list")
+		log.Println("Name not found in args list")
 		return false
 	}
 	return len([]rune(name[1])) > 0

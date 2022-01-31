@@ -15,8 +15,6 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-var champ3 map[string]Champion
-
 type PlayerMatchStats struct {
 	SummonerName    string
 	ProfileIcon     int
@@ -44,19 +42,20 @@ type PlayerChampions struct {
 	GamesPlayed int
 }
 
-//!lastmatch player
-func GetLastMatch(playerName string) (result string) {
-	accInfo, exists := getAccountInfo(playerName)
-	if exists {
-		matchID, exist := getMatchID(accInfo.Puuid, 1)
-		if exist {
-			matchresults := getMatch(matchID[0])
-			return formatLastMatchResponse(accInfo.Puuid, matchresults)
-		}
-		log.Println("Unable to get matchID for: " + playerName)
+var emojis [][]*discordgo.Emoji
+var champ3 map[string]Champion
+
+const RANKED_SOLO = 420
+const RANKED_FLEX = 440
+const MATCH_LIMIT = 30
+
+func Temp(s *discordgo.Session, m *discordgo.MessageCreate) {
+	for k, v := range champ3 {
+		s.ChannelMessageSend(m.ChannelID, "<:"+k+":"+GetEmoji(k)+">")
+		time.Sleep(5 * time.Second)
+		log.Println(v)
 	}
-	log.Println("Error getting account info")
-	return "Sorry, something went wrong"
+	return
 }
 
 //!live player
@@ -75,48 +74,78 @@ func IsInGame(playerName string) (result string) {
 	return "Sorry, something went wrong"
 }
 
+//!lastmatch player
+func GetLastMatch(playerName string) (send *discordgo.MessageSend, err error) {
+	accInfo, exists := getAccountInfo(playerName)
+	send = &discordgo.MessageSend{}
+	if exists {
+		matchID := getMatchID(accInfo.Puuid, 1)
+		if len(matchID) < 1 {
+			return send, errors.New("No match history found for " + playerName)
+		}
+		matchresults := getMatch(matchID[0])
+		//fmt.Println(matchresults) //do some error checking
+		//return formatLastMatchResponse(accInfo.Puuid, matchresults)
+		participant := parseParticipant(accInfo.Puuid, matchresults)
+		fileName := participant.ChampionName + ".png"
+		err := getChampionFile(fileName)
+		if err != nil {
+			return send, err
+		}
+		embed := formatRankedEmbed("Last match stats for: "+playerName, fileName, "These are the last match stats")
+		files := formatEmbedImages(embed, []string{}, fileName) //tbh we can just use a url for the thumbnail....
+		embed = formatEmbedAuthor(embed, accInfo)
+		champLineUpRed, champLineUpRedBlue := formatChampionLineUp(matchresults)
+		embed = formatLastMatchEmbedFields(embed, champLineUpRed, champLineUpRedBlue) //
+		send = createMessageSend(embed, files)
+		return send, err
+	}
+	log.Println("Error getting account info")
+	return send, errors.New("Sorry something went wrong getting lastmatch info for " + playerName)
+
+}
+
 //!lookup player
 func LookupPlayer(playerName string) (send *discordgo.MessageSend, err error) {
 	accInfo, exists := getAccountInfo(playerName)
 	send = &discordgo.MessageSend{}
 	if exists {
 		rankedInfo := getRankedInfo(accInfo.Id)
-		fileName, rankedType := getRankedAsset(RankedInfo(rankedInfo))
-		matchIDs, exist := getMatchID(accInfo.Puuid, MATCH_LIMIT) // Request MATCH_LIMIT amount of match ID's to be later filtered out for ranked ones
+		fileName := getRankedAsset(RankedInfo(rankedInfo))
+		matchIDs := getMatchID(accInfo.Puuid, MATCH_LIMIT) // Request MATCH_LIMIT amount of match ID's to be later filtered out for ranked ones
 		if len(matchIDs) < 1 {
 			return send, errors.New("No match history found for " + playerName)
 		}
 
-		if exist {
-			var matchStatsSlice []MatchResults
-			for n, k := 0, 0; n < len(matchIDs) && k < 10; n++ { // Get 10 games
-				newMatch := getMatch(matchIDs[n])
-				if newMatch.Info.QueueId == RANKED_SOLO || newMatch.Info.QueueId == RANKED_FLEX { // But only if they are ranked_solo or ranked_flex games
-					matchStatsSlice = append(matchStatsSlice, newMatch)
-					k++
-				}
+		var matchStatsSlice []MatchResults
+		for n, k := 0, 0; n < len(matchIDs) && k < 10; n++ { // Get 10 games
+			newMatch := getMatch(matchIDs[n])
+			if newMatch.Info.QueueId == RANKED_SOLO || newMatch.Info.QueueId == RANKED_FLEX { // But only if they are ranked_solo or ranked_flex games
+				matchStatsSlice = append(matchStatsSlice, newMatch)
+				k++
 			}
-
-			description := formatPlayerRankedStats(rankedInfo)
-			embed := formatRankedEmbed(playerName, rankedType, fileName, description)
-			embed = formatEmbedAuthor(embed, accInfo)
-
-			if matchStatsSlice == nil {
-				return &discordgo.MessageSend{Embed: embed}, errors.New("No rank history found for " + playerName)
-			}
-
-			playermatchstats := formatMatchStats(matchStatsSlice, accInfo.Puuid)
-			top3ChampStats := getTop3Champions(playermatchstats)
-			var top3ChampNames []string
-			for k := 0; k < len(top3ChampStats); k++ {
-				top3ChampNames = append(top3ChampNames, top3ChampStats[k].Name)
-			}
-
-			embed = formatPlayerLookupEmbedFields(embed, playermatchstats, top3ChampNames)
-			files := formatEmbedImages(embed, top3ChampNames, fileName)
-			send = createMessageSend(embed, files)
-			return send, err
 		}
+
+		description := formatPlayerRankedStats(rankedInfo)
+		embed := formatRankedEmbed(playerName, fileName, description)
+		embed = formatEmbedAuthor(embed, accInfo)
+
+		if matchStatsSlice == nil {
+			return &discordgo.MessageSend{Embed: embed}, errors.New("No rank history found for " + playerName)
+		}
+
+		playermatchstats := formatMatchStats(matchStatsSlice, accInfo.Puuid)
+		top3ChampStats := getTop3Champions(playermatchstats)
+		var top3ChampNames []string
+		for k := 0; k < len(top3ChampStats); k++ {
+			top3ChampNames = append(top3ChampNames, top3ChampStats[k].Name)
+		}
+
+		embed = formatPlayerLookupEmbedFields(embed, playermatchstats, top3ChampNames)
+		files := formatEmbedImages(embed, top3ChampNames, fileName)
+		send = createMessageSend(embed, files)
+		return send, err
+
 	}
 	return send, errors.New("Unable to get accInfo for: " + playerName)
 }
@@ -150,6 +179,10 @@ func createMessageSend(embed *discordgo.MessageEmbed, files []*discordgo.File) *
 	return send
 }
 
+func InitEmojis(emoji [][]*discordgo.Emoji) {
+	emojis = emoji
+}
+
 // An object is instatiated on program start up containing all the names of all the champions and their ID's. Use this method to retrieve a name by ID
 func GetChampion(champID string) string {
 	for k, v := range champ3 {
@@ -158,6 +191,49 @@ func GetChampion(champID string) string {
 		}
 	}
 	return champID
+}
+
+func GetEmoji(emojiName string) string {
+	for n := 0; n < len(emojis); n++ {
+		for j := 0; j < len(emojis[n]); j++ {
+			if emojis[n][j].Name == emojiName {
+				return emojis[n][j].ID
+			}
+		}
+	}
+	return ""
+}
+
+func formatLastMatchEmbedFields(embed *discordgo.MessageEmbed, redTeam string, blueTeam string) *discordgo.MessageEmbed {
+	// emoji := *&discordgo.Emoji{
+	// 	Name: ":Jinx:",
+	// 	ID:   "546792285354852352",
+	// }
+	embed.Fields = []*discordgo.MessageEmbedField{
+		{
+			Name:   "\u200b",
+			Value:  "\u200b",
+			Inline: false,
+		},
+		{
+			Name:  "last match stats stats: \t\t",
+			Value: "KDA",
+		},
+		{
+			Name:   "\u200b",
+			Value:  "\u200b",
+			Inline: false,
+		},
+		{
+			Name:   redTeam,
+			Value:  blueTeam,
+			Inline: false,
+		},
+	}
+	embed.Image = &discordgo.MessageEmbedImage{
+		URL: "attachment://Lux.png",
+	}
+	return embed
 }
 
 func formatPlayerLookupEmbedFields(embed *discordgo.MessageEmbed, playerMatchStats PlayerMatchStats, top3Champs []string) *discordgo.MessageEmbed {
@@ -250,7 +326,7 @@ func formatPlayerLookupEmbedFields(embed *discordgo.MessageEmbed, playerMatchSta
 	return embed
 }
 
-func formatRankedEmbed(playerName string, rankedType int, fileName string, description string) *discordgo.MessageEmbed {
+func formatRankedEmbed(playerName string, fileName string, description string) *discordgo.MessageEmbed {
 	embed := &discordgo.MessageEmbed{
 		Color:       000127255,
 		Title:       playerName,
@@ -272,24 +348,36 @@ func formatEmbedAuthor(embed *discordgo.MessageEmbed, playerInfo Summoner) *disc
 	return embed
 }
 
+func getChampionFile(filename string) (err error) {
+	URL := "http://ddragon.leagueoflegends.com/cdn/12.2.1/img/champion/"
+	if _, err := os.Stat("./championImages/" + filename); errors.Is(err, os.ErrNotExist) {
+		err = downloadFile(URL+filename, filename) //champion icons are only downloaded if they don't exist in the "championImages" directory
+	}
+	return err
+}
+
+//first 5 elements is blue team, next 5 is read team
+func formatChampionLineUp(matchResults MatchResults) (string, string) {
+	var champLineUpRed string
+	var champLineUpBlue string
+	for n := 0; n < len(matchResults.Info.Participants); n++ {
+		if n < 5 {
+			champLineUpRed += "<:" + matchResults.Info.Participants[n].ChampionName + ":" + GetEmoji(matchResults.Info.Participants[n].ChampionName) + "> "
+		} else {
+			champLineUpBlue += "<:" + matchResults.Info.Participants[n].ChampionName + ":" + GetEmoji(matchResults.Info.Participants[n].ChampionName) + "> "
+		}
+	}
+	return champLineUpRed, champLineUpBlue
+}
+
 func formatEmbedImages(embed *discordgo.MessageEmbed, imageNames []string, rankFileName string) []*discordgo.File {
 	var files []*discordgo.File
-	file2, _ := os.Open("./assets/" + rankFileName)
-	files = append(files, &discordgo.File{
-		Name:        rankFileName,
-		ContentType: "image/png",
-		Reader:      file2,
-	})
 
-	URL := "http://ddragon.leagueoflegends.com/cdn/12.2.1/img/champion/"
 	for n := 0; n < len(imageNames); n++ {
 		imageNames[n] += ".png"
-		if _, err := os.Stat("./championImages/" + imageNames[n]); errors.Is(err, os.ErrNotExist) {
-			err = downloadFile(URL+imageNames[n], imageNames[n]) //champion icons are only downloaded if they don't exist in the "championImages" directory
-			if err != nil {
-				log.Fatal("Unable to download file")
-				return files
-			}
+		err := getChampionFile(imageNames[n])
+		if err != nil {
+			return files
 		}
 		imageNames[n] = "./championImages/" + imageNames[n]
 	}
@@ -299,6 +387,19 @@ func formatEmbedImages(embed *discordgo.MessageEmbed, imageNames []string, rankF
 		file, _ := os.Open(fileImageName)
 		files = append(files, &discordgo.File{
 			Name:        fileImageName,
+			ContentType: "image/png",
+			Reader:      file,
+		})
+		file2, _ := os.Open("./assets/" + rankFileName)
+		files = append(files, &discordgo.File{
+			Name:        rankFileName,
+			ContentType: "image/png",
+			Reader:      file2,
+		})
+	} else {
+		file, _ := os.Open("./championImages/" + rankFileName) // actually champion image for !lastmatch
+		files = append(files, &discordgo.File{
+			Name:        rankFileName,
 			ContentType: "image/png",
 			Reader:      file,
 		})
@@ -484,32 +585,32 @@ func getTop3Champions(playerMatchStats PlayerMatchStats) []*PlayerChampions {
 }
 
 // Ranked icon images are locally stored. This method is used to determine which ranked icon image we need.
-func getRankedAsset(rankedStats RankedInfo) (filename string, rankedType int) {
+func getRankedAsset(rankedStats RankedInfo) string {
 	for n := 0; n < len(rankedStats); n++ {
 		if rankedStats[n].QueueType == "RANKED_SOLO_5x5" || rankedStats[n].QueueType == "RANKED_TEAM_5x5" || rankedStats[n].QueueType == "RANKED_FLEX_SR" {
 			switch {
 			case rankedStats[n].Tier == "IRON":
-				return "Emblem_Iron.png", n
+				return "Emblem_Iron.png"
 			case rankedStats[n].Tier == "BRONZE":
-				return "Emblem_Bronze.png", n
+				return "Emblem_Bronze.png"
 			case rankedStats[n].Tier == "SILVER":
-				return "Emblem_Silver.png", n
+				return "Emblem_Silver.png"
 			case rankedStats[n].Tier == "GOLD":
-				return "Emblem_Gold.png", n
+				return "Emblem_Gold.png"
 			case rankedStats[n].Tier == "PLATINUM":
-				return "Emblem_Platinum.png", n
+				return "Emblem_Platinum.png"
 			case rankedStats[n].Tier == "DIAMOND":
-				return "Emblem_Diamond.png", n
+				return "Emblem_Diamond.png"
 			case rankedStats[n].Tier == "MASTER":
-				return "Emblem_Master.png", n
+				return "Emblem_Master.png"
 			case rankedStats[n].Tier == "GRANDMASTER":
-				return "Emblem_Grandmaster.png", n
+				return "Emblem_Grandmaster.png"
 			case rankedStats[n].Tier == "CHALLENGER":
-				return "Emblem_Challenger.png", n
+				return "Emblem_Challenger.png"
 			}
 		}
 	}
-	return "UNRANKED.png", 0
+	return "UNRANKED.png"
 }
 
 // When calling the Riot API for match data, we get a large json object with match data of all 10 players.
@@ -609,7 +710,7 @@ func formatLastMatchResponse(puuid string, matchResults MatchResults) (matchResu
 	seconds := matchResults.Info.GameDuration % 60
 
 	resultsFormatted := "```" + mySummonerStats.SummonerName + "'s last game consists of the following stats:" +
-		"\nDate: " + time.Unix(int64((matchResults.Info.GameCreation/1000)), 0).UTC().String() +
+		"\nDate: " + time.Unix(int64((matchResults.Info.GameCreation/1000)), 0).Local().String() +
 		"\nGame type: " + matchResults.Info.GameMode +
 		"\nGame duration: " + fmt.Sprintf("%02d:%02d", int(minutes), int(seconds)) +
 		"\nChampion: " + mySummonerStats.ChampionName +
@@ -650,7 +751,7 @@ func formatPlayerRankedStats(rankedStats RankedInfo) string {
 			return rankedStats[n].Tier + " " + rankedStats[n].Rank +
 				" with " + strconv.Itoa(rankedStats[n].LeaguePoints) + " LP. Season W/L: " + strconv.Itoa(rankedStats[n].Wins) + " wins and " + strconv.Itoa(rankedStats[n].Losses) + " losses. WR: " + strconv.Itoa((rankedStats[n].Wins*100)/(rankedStats[n].Wins+rankedStats[n].Losses)) + "%"
 		} else {
-			return "Currently unranked."
+			return "```Currently unranked.```"
 		}
 
 	}

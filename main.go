@@ -3,7 +3,6 @@ package main
 import (
 	"Leagly/bot"
 	"Leagly/config"
-	"Leagly/query"
 	"fmt"
 )
 
@@ -15,6 +14,5 @@ func main() {
 		panic(err)
 	}
 
-	query.InitializedChampStruct()
 	bot.ConnectToDiscord()
 }

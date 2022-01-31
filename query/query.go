@@ -84,10 +84,6 @@ type Champion struct {
 	Key string
 }
 
-const RANKED_SOLO = 420
-const RANKED_FLEX = 440
-const MATCH_LIMIT = 30
-
 ///
 ///
 ///
@@ -95,12 +91,12 @@ const MATCH_LIMIT = 30
 func getMasteryData(accID string) Mastery {
 	resp, err := http.Get("https://na1.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-summoner/" + accID + "?api_key=" + config.ApiKey)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println("Unable to get mastery info. Error: " + err.Error())
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println("Unable to read mastery info. Error: " + err.Error())
 	}
 
 	masteryStats := string(body)
@@ -114,12 +110,12 @@ func getMasteryData(accID string) Mastery {
 func getRankedInfo(accID string) RankedInfo {
 	resp, err := http.Get("https://na1.api.riotgames.com/lol/league/v4/entries/by-summoner/" + accID + "?api_key=" + config.ApiKey)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println("Unable to get ranked info. Error: " + err.Error())
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println("Unable to read ranked info. Error: " + err.Error())
 	}
 
 	rankedStats := string(body)
@@ -133,12 +129,12 @@ func getRankedInfo(accID string) RankedInfo {
 func getLiveGame(summID string) LiveGameInfo {
 	resp, err := http.Get("https://na1.api.riotgames.com/lol/spectator/v4/active-games/by-summoner/" + summID + "?api_key=" + config.ApiKey)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println("Unable to get live game info. Error: " + err.Error())
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println("Unable to read live game info. Error: " + err.Error())
 	}
 
 	liveGame := string(body)
@@ -152,12 +148,12 @@ func getLiveGame(summID string) LiveGameInfo {
 func getMatch(matchid string) MatchResults {
 	resp, err := http.Get("https://americas.api.riotgames.com/lol/match/v5/matches/" + matchid + "?api_key=" + config.ApiKey)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println("Unable to get match info. Error: " + err.Error())
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println("Unable to read match info. Error: " + err.Error())
 	}
 
 	match := string(body)
@@ -168,36 +164,39 @@ func getMatch(matchid string) MatchResults {
 	return matchresults
 }
 
-func getMatchID(puuid string, count int) ([]string, bool) {
+func getMatchID(puuid string, count int) []string {
 	resp, err := http.Get("https://americas.api.riotgames.com/lol/match/v5/matches/by-puuid/" + puuid + "/ids?start=0&count=" + (strconv.Itoa(count)) + "&api_key=" + config.ApiKey)
+	var arr []string
 	if err != nil {
-		log.Fatalln(err)
+		log.Println("Unable to get matchID data. Error: " + err.Error())
+		return arr
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println("Unable to read matchID data. Error: " + err.Error())
+		return arr
 	}
 
-	var arr []string
 	_ = json.Unmarshal([]byte(body), &arr)
 	if len(arr) == 0 {
-		return arr, false
+		log.Println("Error unmarshaling MatchID data.")
+		return arr
 	}
-	return arr, true
+	return arr
 }
 
 func getAccountInfo(playerName string) (summoner Summoner, exists bool) {
 	resp, err := http.Get("https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/" + playerName + "?api_key=" + config.ApiKey)
 
 	if err != nil {
-		log.Println(err)
+		log.Println("Unable to get account info. Error: " + err.Error())
 		return summoner, false
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Println(err)
+		log.Println("Unable to read account info. Error: " + err.Error())
 		return summoner, false
 	}
 	//Convert the body to type string
@@ -210,17 +209,18 @@ func getAccountInfo(playerName string) (summoner Summoner, exists bool) {
 
 }
 
-//ToDo : create an enum to map every champion to its key and get the name
 func InitializedChampStruct() {
 	resp, err := http.Get("http://ddragon.leagueoflegends.com/cdn/12.1.1/data/en_US/champion.json")
 
 	if err != nil {
-		log.Fatalln(err)
+		log.Println("Unable to get champion struct data. Error: " + err.Error())
+		return
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Fatalln(err)
+		log.Println("Unable to read champion struct data. Error: " + err.Error())
+		return
 	}
 	//Convert the body to type string
 	sb := string(body)
@@ -234,23 +234,27 @@ func downloadFile(URL, fileName string) error {
 	//Get the response bytes from the url
 	response, err := http.Get(URL)
 	if err != nil {
+		log.Println("Unable to download file. Error: " + err.Error())
 		return err
 	}
 	defer response.Body.Close()
 
 	if response.StatusCode != 200 {
+		log.Println("Unable to download file. Status code: " + strconv.Itoa(response.StatusCode) + " Error: " + err.Error())
 		return err
 	}
 	//Create a empty file
 	file, err := os.Create("./championImages/" + fileName)
 	if err != nil {
+		log.Println("Error creating champion image directore or file. Error: " + err.Error())
 		return err
 	}
 	defer file.Close()
 
-	//Write the bytes to the fiel
+	//Write the bytes to the file
 	_, err = io.Copy(file, response.Body)
 	if err != nil {
+		log.Println("Error copying image data to file. Error: " + err.Error())
 		return err
 	}
 
