@@ -92,11 +92,11 @@ func GetLastMatch(playerName string) (send *discordgo.MessageSend, err error) {
 		if err != nil {
 			return send, err
 		}
-		embed := formatRankedEmbed("Last match stats for: "+playerName, fileName, "These are the last match stats")
+		embed := formatRankedEmbed("Last match stats for: "+playerName, fileName, "Summoners Rift Ranked Flex. Duration: 34:45", getEmbedColour(participant.Win))
 		files := formatEmbedImages(embed, []string{}, fileName) //tbh we can just use a url for the thumbnail....
 		embed = formatEmbedAuthor(embed, accInfo)
-		champLineUpRed, champLineUpRedBlue := formatChampionLineUp(matchresults)
-		embed = formatLastMatchEmbedFields(embed, champLineUpRed, champLineUpRedBlue) //
+		//teamName, champs := formatChampionLineUp(matchresults)
+		embed = formatLastMatchEmbedFields(embed, matchresults) //
 		send = createMessageSend(embed, files)
 		return send, err
 	}
@@ -127,7 +127,7 @@ func LookupPlayer(playerName string) (send *discordgo.MessageSend, err error) {
 		}
 
 		description := formatPlayerRankedStats(rankedInfo)
-		embed := formatRankedEmbed(playerName, fileName, description)
+		embed := formatRankedEmbed(playerName, fileName, description, 000127255)
 		embed = formatEmbedAuthor(embed, accInfo)
 
 		if matchStatsSlice == nil {
@@ -160,6 +160,13 @@ func MasteryPlayer(playerName string) (send *discordgo.MessageSend, err error) {
 	}
 	log.Println("Unable to get accInfo for: " + playerName)
 	return send, errors.New("Unable to get accInfo for: " + playerName)
+}
+
+func getEmbedColour(hasWon bool) int {
+	if hasWon {
+		return 28672 //Green
+	}
+	return 10747904 // Red
 }
 
 func DeleteImages(fileNames []string) {
@@ -204,20 +211,12 @@ func GetEmoji(emojiName string) string {
 	return ""
 }
 
-func formatLastMatchEmbedFields(embed *discordgo.MessageEmbed, redTeam string, blueTeam string) *discordgo.MessageEmbed {
-	// emoji := *&discordgo.Emoji{
-	// 	Name: ":Jinx:",
-	// 	ID:   "546792285354852352",
-	// }
+func formatLastMatchEmbedFields(embed *discordgo.MessageEmbed, matchResults MatchResults) *discordgo.MessageEmbed {
+
 	embed.Fields = []*discordgo.MessageEmbedField{
 		{
-			Name:   "\u200b",
-			Value:  "\u200b",
-			Inline: false,
-		},
-		{
-			Name:  "last match stats stats: \t\t",
-			Value: "KDA",
+			Name:  "```Kills, Deaths, Assissts, CS```",
+			Value: "```other stats here like dmg taken```",
 		},
 		{
 			Name:   "\u200b",
@@ -225,13 +224,46 @@ func formatLastMatchEmbedFields(embed *discordgo.MessageEmbed, redTeam string, b
 			Inline: false,
 		},
 		{
-			Name:   redTeam,
-			Value:  blueTeam,
-			Inline: false,
+			Name:   "\u200b",
+			Value:  "\u200b",
+			Inline: true,
+		},
+		{
+			Name:   "\u200b",
+			Value:  "Blue Team",
+			Inline: true,
+		},
+		{
+			Name:   "\u200b",
+			Value:  "Red Team",
+			Inline: true,
 		},
 	}
-	embed.Image = &discordgo.MessageEmbedImage{
-		URL: "attachment://Lux.png",
+	embed2 := &discordgo.MessageEmbed{}
+	roles := []string{"<:PositionTop:" + GetEmoji("PositionTop") + ">", "<:PositionJungle:" + GetEmoji("PositionJungle") + ">", "<:PositionMid:" + GetEmoji("PositionMid") + ">", "<:PositionBot:" + GetEmoji("PositionBot") + ">", "<:PositionSupport:" + GetEmoji("PositionSupport") + ">"}
+	for k := 0; k < len(matchResults.Info.Participants)-5; k++ {
+		embed2.Fields = []*discordgo.MessageEmbedField{
+			{
+				Name:   roles[k],
+				Value:  "\u200b",
+				Inline: true,
+			},
+			{
+				Name:  "> __<:" + matchResults.Info.Participants[k].ChampionName + ":" + GetEmoji(matchResults.Info.Participants[k].ChampionName) + ">" + matchResults.Info.Participants[k].SummonerName + "__",
+				Value: fmt.Sprintf(">    %d / %d / %d ", matchResults.Info.Participants[k].Kills, matchResults.Info.Participants[k].Deaths, matchResults.Info.Participants[k].Assists),
+				//Value:  "> __**<:" + matchResults.Info.Participants[k+5].ChampionName + ":" + GetEmoji(matchResults.Info.Participants[k+5].ChampionName) + ">" + matchResults.Info.Participants[k+5].SummonerName + "**__",
+				Inline: true,
+			},
+			{
+				//Name:   fmt.Sprintf("> %d \n> %d ", matchResults.Info.Participants[k].TotalDamageDealtToChampions, matchResults.Info.Participants[k+5].TotalDamageDealtToChampions),
+				Name:   "> __**<:" + matchResults.Info.Participants[k+5].ChampionName + ":" + GetEmoji(matchResults.Info.Participants[k+5].ChampionName) + ">" + matchResults.Info.Participants[k+5].SummonerName + "**__",
+				Value:  fmt.Sprintf(">    %d / %d / %d ", matchResults.Info.Participants[k+5].Kills, matchResults.Info.Participants[k+5].Deaths, matchResults.Info.Participants[k+5].Assists),
+				Inline: true,
+			},
+		}
+		embed.Fields = append(embed.Fields, embed2.Fields[0])
+		embed.Fields = append(embed.Fields, embed2.Fields[1])
+		embed.Fields = append(embed.Fields, embed2.Fields[2])
 	}
 	return embed
 }
@@ -326,9 +358,9 @@ func formatPlayerLookupEmbedFields(embed *discordgo.MessageEmbed, playerMatchSta
 	return embed
 }
 
-func formatRankedEmbed(playerName string, fileName string, description string) *discordgo.MessageEmbed {
+func formatRankedEmbed(playerName string, fileName string, description string, colour int) *discordgo.MessageEmbed {
 	embed := &discordgo.MessageEmbed{
-		Color:       000127255,
+		Color:       colour,
 		Title:       playerName,
 		Description: description,
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
@@ -357,17 +389,22 @@ func getChampionFile(filename string) (err error) {
 }
 
 //first 5 elements is blue team, next 5 is read team
-func formatChampionLineUp(matchResults MatchResults) (string, string) {
-	var champLineUpRed string
-	var champLineUpBlue string
+func formatChampionLineUp(matchResults MatchResults) ([]string, []string) {
+	// var champLineUpRed string
+	// var champLineUpBlue string
+	var teamName []string
+	var champs []string
 	for n := 0; n < len(matchResults.Info.Participants); n++ {
-		if n < 5 {
-			champLineUpRed += "<:" + matchResults.Info.Participants[n].ChampionName + ":" + GetEmoji(matchResults.Info.Participants[n].ChampionName) + "> "
-		} else {
-			champLineUpBlue += "<:" + matchResults.Info.Participants[n].ChampionName + ":" + GetEmoji(matchResults.Info.Participants[n].ChampionName) + "> "
-		}
+		// if n < 5 {
+		// 	champLineUpRed += "<:" + matchResults.Info.Participants[n].ChampionName + ":" + GetEmoji(matchResults.Info.Participants[n].ChampionName) + ">\t"
+		// } else {
+		// 	champLineUpBlue += "<:" + matchResults.Info.Participants[n].ChampionName + ":" + GetEmoji(matchResults.Info.Participants[n].ChampionName) + ">\t"
+		// }
+		teamName = append(teamName, matchResults.Info.Participants[n].SummonerName)
+		champs = append(champs, "<:"+matchResults.Info.Participants[n].ChampionName+":"+GetEmoji(matchResults.Info.Participants[n].ChampionName)+">")
 	}
-	return champLineUpRed, champLineUpBlue
+	//return champLineUpRed, champLineUpBlue
+	return teamName, champs
 }
 
 func formatEmbedImages(embed *discordgo.MessageEmbed, imageNames []string, rankFileName string) []*discordgo.File {

@@ -86,21 +86,6 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		s.ChannelMessageSend(m.ChannelID, "<:"+args[1]+":"+query.GetEmoji(args[1])+">")
 		return
 	}
-	/* TODO : missing icons from these champs
-	<:Viego:>
-	<:Sett:>
-	<:Senna:>
-	<:MonkeyKing:> (Wukong)
-	<:Samira:>
-	<:Qiyana:>
-	<:Velkoz:>
-	<:Akshan:>
-	<:Gwen:>
-	<:Vex:>
-	<:Aphelios:>
-	<:Seraphine:>
-	<:Rell:>
-	*/
 
 	if args[0] == "!test2" {
 		query.Temp(s, m)
