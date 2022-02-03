@@ -46,6 +46,13 @@ type Participants struct {
 	Puuid                       string
 	SummonerName                string
 	ProfileIcon                 int
+	TotalDamageTaken            int
+	Item0                       int
+	Item1                       int
+	Item2                       int
+	Item3                       int
+	Item4                       int
+	Item5                       int
 	//AP damage taken and AD damage taken ADD IT
 }
 

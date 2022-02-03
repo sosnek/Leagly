@@ -54,49 +54,60 @@ func InitializeEmojis(s *discordgo.Session) {
 	emoji3, _ := s.GuildEmojis("937481122198200320")
 	emoji4, _ := s.GuildEmojis("937537071902503005")
 	emoji5, _ := s.GuildEmojis("937482778499485756")
+	emoji6, _ := s.GuildEmojis("938569984748163112")
+	emoji7, _ := s.GuildEmojis("938569677326671913")
+	emoji8, _ := s.GuildEmojis("938569400724910110")
 	emojis = append(emojis, emoji)
 	emojis = append(emojis, emoji2)
 	emojis = append(emojis, emoji3)
 	emojis = append(emojis, emoji4)
 	emojis = append(emojis, emoji5)
+	emojis = append(emojis, emoji6)
+	emojis = append(emojis, emoji7)
+	emojis = append(emojis, emoji8)
 	query.InitEmojis(emojis)
 }
 
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	messageContent := m.Content
-	args := createName(strings.Fields(messageContent))
-	if len(args) < 1 {
-		return
-	}
-
-	// !help
-	if m.Content == "!help" {
-		log.Println(m.Author.Username + ": !help")
-		handleHelp(s, m)
-		return
-	}
 
 	// ignore messages from bot himself
 	if m.Author.ID == s.State.User.ID {
 		return
 	}
 
-	if args[0] == "!test" {
-		s.ChannelMessageSend(m.ChannelID, "<:"+args[1]+":"+query.GetEmoji(args[1])+">")
+	args := createName(strings.Fields(messageContent))
+	if len(args) < 1 {
 		return
 	}
 
-	if args[0] == "!test2" {
-		query.Temp(s, m)
+	if messageContent[0:2] != config.BotPrefix {
 		return
 	}
+	command := args[0]
+	// !help
+	if command == config.BotPrefix+"help" {
+		log.Println(m.Author.Username + ": >>help")
+		handleHelp(s, m)
+		return
+	}
+
+	// if args[0] == "!test" {
+	// 	s.ChannelMessageSend(m.ChannelID, "<:"+args[1]+":"+query.GetEmoji(args[1])+">")
+	// 	return
+	// }
+
+	// if args[0] == "!test2" {
+	// 	query.Temp(s, m)
+	// 	return
+	// }
 
 	// !lastmatch - Searches and displays stats from last league game played
-	if args[0] == "!lastmatch" {
+	if command == config.BotPrefix+"lastmatch" {
 		if validateName(args) {
 
-			log.Println(m.Author.Username + " : !lastmatch " + args[1])
+			log.Println(m.Author.Username + " : >>lastmatch " + args[1])
 			send, err := query.GetLastMatch(args[1])
 			if err != nil {
 				log.Println(err)
@@ -108,18 +119,18 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	// !live - checks if player is currently in a game
-	if args[0] == "!live" {
+	if command == config.BotPrefix+"live" {
 		if validateName(args) {
-			log.Println(m.Author.Username + " : !live " + args[1])
+			log.Println(m.Author.Username + " : >>live " + args[1])
 			s.ChannelMessageSend(m.ChannelID, query.IsInGame(args[1]))
 		}
 		return
 	}
 
 	//lookup
-	if args[0] == "!lookup" {
+	if command == config.BotPrefix+"lookup" {
 		if validateName(args) {
-			log.Println(m.Author.Username + " : !lookup " + args[1])
+			log.Println(m.Author.Username + " : >>lookup " + args[1])
 			send, err := query.LookupPlayer(args[1])
 			if err != nil {
 				log.Println(err)
@@ -131,18 +142,18 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	if args[0] == "!mastery" {
-		if validateName(args) {
-			log.Println(m.Author.Username + " : !mastery " + args[1])
-			send, err := query.MasteryPlayer(args[1])
-			if err != nil {
-				log.Println(err)
-				s.ChannelMessageSend(m.ChannelID, err.Error())
-			}
-			s.ChannelMessageSendComplex(m.ChannelID, send)
-		}
-		return
-	}
+	// if command == config.BotPrefix+"mastery" {
+	// 	if validateName(args) {
+	// 		log.Println(m.Author.Username + " : >>mastery " + args[1])
+	// 		send, err := query.MasteryPlayer(args[1])
+	// 		if err != nil {
+	// 			log.Println(err)
+	// 			s.ChannelMessageSend(m.ChannelID, err.Error())
+	// 		}
+	// 		s.ChannelMessageSendComplex(m.ChannelID, send)
+	// 	}
+	// 	return
+	// }
 }
 
 func createName(args []string) []string {
@@ -162,10 +173,10 @@ func validateName(name []string) bool {
 
 func handleHelp(s *discordgo.Session, m *discordgo.MessageCreate) {
 	msg := "```Commands:\n"
-	msg = fmt.Sprintf("%s\t%s\n", msg, "!help - shows all available commands")
-	msg = fmt.Sprintf("%s\t%s\n", msg, "!live <playername> - Checks to see if the player is in a game")
-	msg = fmt.Sprintf("%s\t%s\n", msg, "!lastmatch <playername> - shows the players last match stats")
-	msg = fmt.Sprintf("%s\t%s\n", msg, "!lookup <playername> - shows ranked history of player```")
+	msg = fmt.Sprintf("%s\t%s\n", msg, ">>help - shows all available commands")
+	msg = fmt.Sprintf("%s\t%s\n", msg, ">>live <playername> - Checks to see if the player is in a game")
+	msg = fmt.Sprintf("%s\t%s\n", msg, ">>lastmatch <playername> - shows the players last match stats")
+	msg = fmt.Sprintf("%s\t%s\n", msg, ">>lookup <playername> - shows ranked history of player```")
 	//msg = fmt.Sprintf("%s\t%s\n", msg, "!mastery <playername> - shows mastery stats of player```")
 	s.ChannelMessageSend(m.ChannelID, msg)
 }

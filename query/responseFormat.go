@@ -8,6 +8,7 @@ import (
 	"image/jpeg"
 	"log"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -45,8 +46,14 @@ type PlayerChampions struct {
 var emojis [][]*discordgo.Emoji
 var champ3 map[string]Champion
 
+//game codes
+const URF = 900
+const NORMAL = 400
 const RANKED_SOLO = 420
 const RANKED_FLEX = 440
+const ARAM = 450
+
+//Lookup match limit maxium last 30 matches
 const MATCH_LIMIT = 30
 
 func Temp(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -92,11 +99,10 @@ func GetLastMatch(playerName string) (send *discordgo.MessageSend, err error) {
 		if err != nil {
 			return send, err
 		}
-		embed := formatRankedEmbed("Last match stats for: "+playerName, fileName, "Summoners Rift Ranked Flex. Duration: 34:45", getEmbedColour(participant.Win))
-		files := formatEmbedImages(embed, []string{}, fileName) //tbh we can just use a url for the thumbnail....
+		embed := formatRankedEmbed(getMatchType(matchresults.Info.QueueId)+". Time: "+fmt.Sprintf("%02d:%02d", int(matchresults.Info.GameDuration/60), int(matchresults.Info.GameDuration%60)), fileName, formatItems(participant), getEmbedColour(participant.Win), time.Unix(int64((matchresults.Info.GameCreation)/1000) + +int64(matchresults.Info.GameDuration), 0).Local())
+		files := formatEmbedImages(embed, []string{}, fileName)
 		embed = formatEmbedAuthor(embed, accInfo)
-		//teamName, champs := formatChampionLineUp(matchresults)
-		embed = formatLastMatchEmbedFields(embed, matchresults) //
+		embed = formatLastMatchEmbedFields(embed, matchresults, accInfo.Puuid)
 		send = createMessageSend(embed, files)
 		return send, err
 	}
@@ -127,7 +133,7 @@ func LookupPlayer(playerName string) (send *discordgo.MessageSend, err error) {
 		}
 
 		description := formatPlayerRankedStats(rankedInfo)
-		embed := formatRankedEmbed(playerName, fileName, description, 000127255)
+		embed := formatRankedEmbed(playerName, fileName, description, 000127255, time.Now())
 		embed = formatEmbedAuthor(embed, accInfo)
 
 		if matchStatsSlice == nil {
@@ -201,27 +207,33 @@ func GetChampion(champID string) string {
 }
 
 func GetEmoji(emojiName string) string {
-	for n := 0; n < len(emojis); n++ {
-		for j := 0; j < len(emojis[n]); j++ {
-			if emojis[n][j].Name == emojiName {
-				return emojis[n][j].ID
+	for i := range emojis {
+		for x := range emojis[i] {
+			if emojis[i][x].Name == emojiName {
+				return emojis[i][x].ID
 			}
 		}
 	}
 	return ""
 }
 
-func formatLastMatchEmbedFields(embed *discordgo.MessageEmbed, matchResults MatchResults) *discordgo.MessageEmbed {
-
+func formatLastMatchEmbedFields(embed *discordgo.MessageEmbed, matchResults MatchResults, puuid string) *discordgo.MessageEmbed {
+	participant := parseParticipant(puuid, matchResults)
 	embed.Fields = []*discordgo.MessageEmbedField{
 		{
-			Name:  "```Kills, Deaths, Assissts, CS```",
-			Value: "```other stats here like dmg taken```",
+			Name:   "CS",
+			Value:  fmt.Sprintf("```%d```", participant.TotalMinionsKilled),
+			Inline: true,
 		},
 		{
-			Name:   "\u200b",
-			Value:  "\u200b",
-			Inline: false,
+			Name:   "DMG Dealt",
+			Value:  fmt.Sprintf("```%d```", participant.TotalDamageDealtToChampions),
+			Inline: true,
+		},
+		{
+			Name:   "DMG Taken",
+			Value:  fmt.Sprintf("```%d```", participant.TotalDamageTaken),
+			Inline: true,
 		},
 		{
 			Name:   "\u200b",
@@ -249,13 +261,11 @@ func formatLastMatchEmbedFields(embed *discordgo.MessageEmbed, matchResults Matc
 				Inline: true,
 			},
 			{
-				Name:  "> __<:" + matchResults.Info.Participants[k].ChampionName + ":" + GetEmoji(matchResults.Info.Participants[k].ChampionName) + ">" + matchResults.Info.Participants[k].SummonerName + "__",
-				Value: fmt.Sprintf(">    %d / %d / %d ", matchResults.Info.Participants[k].Kills, matchResults.Info.Participants[k].Deaths, matchResults.Info.Participants[k].Assists),
-				//Value:  "> __**<:" + matchResults.Info.Participants[k+5].ChampionName + ":" + GetEmoji(matchResults.Info.Participants[k+5].ChampionName) + ">" + matchResults.Info.Participants[k+5].SummonerName + "**__",
+				Name:   "> __<:" + matchResults.Info.Participants[k].ChampionName + ":" + GetEmoji(matchResults.Info.Participants[k].ChampionName) + ">" + matchResults.Info.Participants[k].SummonerName + "__",
+				Value:  fmt.Sprintf(">    %d / %d / %d ", matchResults.Info.Participants[k].Kills, matchResults.Info.Participants[k].Deaths, matchResults.Info.Participants[k].Assists),
 				Inline: true,
 			},
 			{
-				//Name:   fmt.Sprintf("> %d \n> %d ", matchResults.Info.Participants[k].TotalDamageDealtToChampions, matchResults.Info.Participants[k+5].TotalDamageDealtToChampions),
 				Name:   "> __**<:" + matchResults.Info.Participants[k+5].ChampionName + ":" + GetEmoji(matchResults.Info.Participants[k+5].ChampionName) + ">" + matchResults.Info.Participants[k+5].SummonerName + "**__",
 				Value:  fmt.Sprintf(">    %d / %d / %d ", matchResults.Info.Participants[k+5].Kills, matchResults.Info.Participants[k+5].Deaths, matchResults.Info.Participants[k+5].Assists),
 				Inline: true,
@@ -358,7 +368,7 @@ func formatPlayerLookupEmbedFields(embed *discordgo.MessageEmbed, playerMatchSta
 	return embed
 }
 
-func formatRankedEmbed(playerName string, fileName string, description string, colour int) *discordgo.MessageEmbed {
+func formatRankedEmbed(playerName string, fileName string, description string, colour int, times time.Time) *discordgo.MessageEmbed {
 	embed := &discordgo.MessageEmbed{
 		Color:       colour,
 		Title:       playerName,
@@ -366,7 +376,7 @@ func formatRankedEmbed(playerName string, fileName string, description string, c
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
 			URL: "attachment://" + fileName,
 		},
-		Timestamp: time.Now().Format(time.RFC3339),
+		Timestamp: times.Format(time.RFC3339),
 	}
 	return embed
 }
@@ -388,23 +398,18 @@ func getChampionFile(filename string) (err error) {
 	return err
 }
 
-//first 5 elements is blue team, next 5 is read team
-func formatChampionLineUp(matchResults MatchResults) ([]string, []string) {
-	// var champLineUpRed string
-	// var champLineUpBlue string
-	var teamName []string
-	var champs []string
-	for n := 0; n < len(matchResults.Info.Participants); n++ {
-		// if n < 5 {
-		// 	champLineUpRed += "<:" + matchResults.Info.Participants[n].ChampionName + ":" + GetEmoji(matchResults.Info.Participants[n].ChampionName) + ">\t"
-		// } else {
-		// 	champLineUpBlue += "<:" + matchResults.Info.Participants[n].ChampionName + ":" + GetEmoji(matchResults.Info.Participants[n].ChampionName) + ">\t"
-		// }
-		teamName = append(teamName, matchResults.Info.Participants[n].SummonerName)
-		champs = append(champs, "<:"+matchResults.Info.Participants[n].ChampionName+":"+GetEmoji(matchResults.Info.Participants[n].ChampionName)+">")
-	}
-	//return champLineUpRed, champLineUpBlue
-	return teamName, champs
+func formatItems(participant Participants) string {
+
+	res := fmt.Sprintf("Items: <:%d:%s> <:%d:%s> <:%d:%s> <:%d:%s> <:%d:%s> <:%d:%s>",
+		participant.Item0, GetEmoji(strconv.Itoa(participant.Item0)),
+		participant.Item1, GetEmoji(strconv.Itoa(participant.Item1)),
+		participant.Item2, GetEmoji(strconv.Itoa(participant.Item2)),
+		participant.Item3, GetEmoji(strconv.Itoa(participant.Item3)),
+		participant.Item4, GetEmoji(strconv.Itoa(participant.Item4)),
+		participant.Item5, GetEmoji(strconv.Itoa(participant.Item5)))
+
+	space := regexp.MustCompile(`<:0:>`)
+	return space.ReplaceAllString(res, " ")
 }
 
 func formatEmbedImages(embed *discordgo.MessageEmbed, imageNames []string, rankFileName string) []*discordgo.File {
@@ -648,6 +653,19 @@ func getRankedAsset(rankedStats RankedInfo) string {
 		}
 	}
 	return "UNRANKED.png"
+}
+
+func getMatchType(queueType int) string {
+	if queueType == RANKED_SOLO || queueType == RANKED_FLEX {
+		return "Summoners Rift Ranked"
+	} else if queueType == NORMAL {
+		return "Summoners Rift Normal"
+	} else if queueType == URF {
+		return "Summoners Rift URF"
+	} else if queueType == ARAM {
+		return "Howling Abyss ARAM"
+	}
+	return "Custom Game"
 }
 
 // When calling the Riot API for match data, we get a large json object with match data of all 10 players.
