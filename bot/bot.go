@@ -42,11 +42,17 @@ func ConnectToDiscord() {
 	leaglyBot.Close()
 }
 
+///
+///
+///
 func Initialize(s *discordgo.Session) {
 	query.InitializedChampStruct()
 	InitializeEmojis(s)
 }
 
+///
+///
+///
 func InitializeEmojis(s *discordgo.Session) {
 	var emojis [][]*discordgo.Emoji
 	emoji, _ := s.GuildEmojis("937465588446539920")
@@ -88,7 +94,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	command := args[0]
 	// !help
 	if command == config.BotPrefix+"help" {
-		log.Println(m.Author.Username + ": >>help")
+		log.Println("Discord ID: " + m.GuildID + "  " + m.Author.Username + ": " + config.BotPrefix + "help")
 		handleHelp(s, m)
 		return
 	}
@@ -98,19 +104,14 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// 	return
 	// }
 
-	// if args[0] == "!test2" {
-	// 	query.Temp(s, m)
-	// 	return
-	// }
-
 	// !lastmatch - Searches and displays stats from last league game played
 	if command == config.BotPrefix+"lastmatch" {
 		if validateName(args) {
 
-			log.Println(m.Author.Username + " : >>lastmatch " + args[1])
+			log.Println("Discord ID: " + m.GuildID + "  " + m.Author.Username + " : " + config.BotPrefix + "lastmatch " + args[1])
 			send, err := query.GetLastMatch(args[1])
 			if err != nil {
-				log.Println(err)
+				log.Println("Discord ID: " + m.GuildID + "  " + err.Error())
 				s.ChannelMessageSend(m.ChannelID, err.Error())
 			}
 			s.ChannelMessageSendComplex(m.ChannelID, send)
@@ -121,8 +122,13 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// !live - checks if player is currently in a game
 	if command == config.BotPrefix+"live" {
 		if validateName(args) {
-			log.Println(m.Author.Username + " : >>live " + args[1])
-			s.ChannelMessageSend(m.ChannelID, query.IsInGame(args[1]))
+			log.Println("Discord ID: " + m.GuildID + "  " + m.Author.Username + " : " + config.BotPrefix + "live " + args[1])
+			send, err := query.IsInGame(args[1])
+			if err != nil {
+				log.Println("Discord ID: " + m.GuildID + "  " + err.Error())
+				s.ChannelMessageSend(m.ChannelID, err.Error())
+			}
+			s.ChannelMessageSendComplex(m.ChannelID, send)
 		}
 		return
 	}
@@ -130,10 +136,10 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	//lookup
 	if command == config.BotPrefix+"lookup" {
 		if validateName(args) {
-			log.Println(m.Author.Username + " : >>lookup " + args[1])
+			log.Println("Discord ID: " + m.GuildID + "  " + m.Author.Username + " : " + config.BotPrefix + "lookup " + args[1])
 			send, err := query.LookupPlayer(args[1])
 			if err != nil {
-				log.Println(err)
+				log.Println("Discord ID: " + m.GuildID + "  " + err.Error())
 				s.ChannelMessageSend(m.ChannelID, err.Error())
 			}
 			s.ChannelMessageSendComplex(m.ChannelID, send)
