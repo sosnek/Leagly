@@ -9,12 +9,19 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	"github.com/bwmarrin/discordgo" //discordgo package from the repo of bwmarrin .
 )
 
 var BotId string
 var goBot *discordgo.Session
+var discordUser []*DiscordUser
+
+type DiscordUser struct {
+	ID        string
+	timestamp time.Time
+}
 
 func ConnectToDiscord() {
 
@@ -107,7 +114,6 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// !lastmatch - Searches and displays stats from last league game played
 	if command == config.BotPrefix+"lastmatch" {
 		if validateName(args) {
-
 			log.Println("Discord ID: " + m.GuildID + "  " + m.Author.Username + " : " + config.BotPrefix + "lastmatch " + args[1])
 			send, err := query.GetLastMatch(args[1])
 			if err != nil {
@@ -137,6 +143,11 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if command == config.BotPrefix+"lookup" {
 		if validateName(args) {
 			log.Println("Discord ID: " + m.GuildID + "  " + m.Author.Username + " : " + config.BotPrefix + "lookup " + args[1])
+			if onCoolDown(m.Author.ID, 5) > 0 {
+				s.ChannelMessageSend(m.ChannelID, "You're currently on cooldown. Please wait a few seconds.")
+				log.Println("Discord ID: " + m.GuildID + "  " + m.Author.Username + " on cooldown")
+				return
+			}
 			send, err := query.LookupPlayer(args[1])
 			if err != nil {
 				log.Println("Discord ID: " + m.GuildID + "  " + err.Error())
@@ -151,6 +162,11 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// if command == config.BotPrefix+"mastery" {
 	// 	if validateName(args) {
 	// 		log.Println(m.Author.Username + " : >>mastery " + args[1])
+	// if onCoolDown(m.Author.ID, 3) > 0 {
+	// 	s.ChannelMessageSend(m.ChannelID, "You're currently on cooldown. Please wait a few seconds.")
+	// 	log.Println("Discord ID: " + m.GuildID + "  " + m.Author.Username + " on cooldown")
+	// 	return
+	// }
 	// 		send, err := query.MasteryPlayer(args[1])
 	// 		if err != nil {
 	// 			log.Println(err)
@@ -160,6 +176,20 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// 	}
 	// 	return
 	// }
+}
+
+func onCoolDown(user string, cd float64) float64 {
+	for i := range discordUser {
+		if discordUser[i].ID == user {
+			t := time.Now()
+			elapsed := t.Sub(discordUser[i].timestamp)
+			if elapsed.Seconds() < cd {
+				return elapsed.Seconds()
+			}
+		}
+	}
+	discordUser = append(discordUser, &DiscordUser{ID: user, timestamp: time.Now()})
+	return 0
 }
 
 func createName(args []string) []string {
