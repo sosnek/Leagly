@@ -119,7 +119,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	if command == config.BotPrefix+"mastery" {
-		//mastery(s,m,args)
+		mastery(s, m, args)
 		return
 	}
 }
