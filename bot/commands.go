@@ -71,11 +71,11 @@ func mastery(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 
 func handleHelp(s *discordgo.Session, m *discordgo.MessageCreate) {
 	msg := "```Commands:\n"
-	msg = fmt.Sprintf("%s\t%s\n", msg, ">>help - shows all available commands")
-	msg = fmt.Sprintf("%s\t%s\n", msg, ">>live <playername> - Checks to see if the player is in a game")
-	msg = fmt.Sprintf("%s\t%s\n", msg, ">>lastmatch <playername> - shows the players last match stats")
-	msg = fmt.Sprintf("%s\t%s\n", msg, ">>lookup <playername> - shows ranked history of player```")
-	//msg = fmt.Sprintf("%s\t%s\n", msg, "!mastery <playername> - shows mastery stats of player```")
+	msg = fmt.Sprintf("%s\t%s\n", msg, config.BotPrefix+"help - shows all available commands")
+	msg = fmt.Sprintf("%s\t%s\n", msg, config.BotPrefix+"live <playername> - Checks to see if the player is in a game")
+	msg = fmt.Sprintf("%s\t%s\n", msg, config.BotPrefix+"lastmatch <playername> - shows the players last match stats")
+	msg = fmt.Sprintf("%s\t%s\n", msg, config.BotPrefix+"lookup <playername> - shows ranked history of player```")
+	msg = fmt.Sprintf("%s\t%s\n", msg, config.BotPrefix+"mastery <playername> - shows mastery stats of player```")
 	s.ChannelMessageSend(m.ChannelID, msg)
 }
 

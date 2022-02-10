@@ -51,7 +51,7 @@ func IsInGame(playerName string) (send *discordgo.MessageSend, err error) {
 			}
 			embed := formatRankedEmbed(playerName+" Is currently in a "+getMatchType(liveGameInfo.GameQueueConfigId), champion+".png", "Playing as "+champion+". Time: "+Gametime, 71, time.Now())
 			embed = formatEmbedAuthor(embed, accInfo)
-			files := formatEmbedImages([]string{}, champion+".png")
+			files := formatEmbedImages([]string{}, "./championImages/", champion+".png")
 			send = createMessageSend(embed, files)
 			return send, nil
 		}
@@ -94,11 +94,11 @@ func GetLastMatch(playerName string) (send *discordgo.MessageSend, err error) {
 			return send, err
 		}
 		embed := formatRankedEmbed(getMatchType(matchresults.Info.QueueId)+". Time: "+fmt.Sprintf("%02d:%02d", int(matchresults.Info.GameDuration/60), int(matchresults.Info.GameDuration%60)), fileName, formatItems(participant), getEmbedColour(participant.Win), time.Unix(int64((matchresults.Info.GameCreation)/1000) + +int64(matchresults.Info.GameDuration), 0).Local())
-		files := formatEmbedImages([]string{}, fileName)
+		files := formatEmbedImages([]string{}, "./championImages/", fileName)
 		embed = formatEmbedAuthor(embed, accInfo)
 		embed = formatLastMatchEmbedFields(embed, matchresults, accInfo.Puuid)
 		send = createMessageSend(embed, files)
-		return send, err
+		return send, nil
 	}
 	log.Println("Error getting account info")
 	return send, errors.New("Sorry something went wrong getting lastmatch info for " + playerName)
@@ -151,9 +151,9 @@ func LookupPlayer(playerName string) (send *discordgo.MessageSend, err error) {
 		}
 
 		embed = formatPlayerLookupEmbedFields(embed, playermatchstats, top3ChampNames)
-		files := formatEmbedImages(top3ChampNames, fileName)
+		files := formatEmbedImages(top3ChampNames, "", fileName)
 		send = createMessageSend(embed, files)
-		return send, err
+		return send, nil
 
 	}
 	return send, errors.New("Unable to get accInfo for: " + playerName)
@@ -166,12 +166,21 @@ func MasteryPlayer(playerName string) (send *discordgo.MessageSend, err error) {
 	accInfo := getAccountInfo(playerName)
 	send = &discordgo.MessageSend{}
 	if accInfo != nil {
+		rankedInfo := getRankedInfo(accInfo.Id)
+		if rankedInfo == nil {
+			return send, errors.New("Error getting match results for " + playerName)
+		}
+		fileName := getRankedAsset(RankedInfo(rankedInfo))
 		masteryStats := getMasteryData(accInfo.Id)
 		if masteryStats == nil {
 			return send, errors.New("Error getting masteries for " + playerName)
 		}
-		//masteryStatsFormatted := formatMasteries(masteryStats)
-		fmt.Println(masteryStats)
+		embed := formatRankedEmbed("Champion Masteries", fileName, "", 16747032, time.Now())
+		embed = formatEmbedAuthor(embed, accInfo)
+		files := formatEmbedImages([]string{}, "./assets/", fileName)
+		embed = formatMasteriesEmbedFields(embed, masteryStats)
+		send = createMessageSend(embed, files)
+		return send, nil
 	}
 	log.Println("Unable to get accInfo for: " + playerName)
 	return send, errors.New("Unable to get accInfo for: " + playerName)
@@ -228,6 +237,37 @@ func GetEmoji(emojiName string) string {
 		}
 	}
 	return ""
+}
+
+///
+///
+///
+func formatMasteriesEmbedFields(embed *discordgo.MessageEmbed, mastery Mastery) *discordgo.MessageEmbed {
+	embed2 := &discordgo.MessageEmbed{}
+	for n := 0; n+1 < len(mastery) && n < 10; n++ {
+		embed2.Fields = []*discordgo.MessageEmbedField{
+			{
+				Name: "> <:" + strconv.Itoa(mastery[n].ChampionID) + ":" + GetEmoji(GetChampion(strconv.Itoa(mastery[n].ChampionID))) + ">" +
+					"<:" + "Mastery" + strconv.Itoa(mastery[n].ChampionLevel) + ":" + GetEmoji(GetChampion("Mastery"+strconv.Itoa(mastery[n].ChampionLevel))) + ">",
+				Value: "> <:" + strconv.Itoa(mastery[n+1].ChampionID) + ":" + GetEmoji(GetChampion(strconv.Itoa(mastery[n+1].ChampionID))) + ">" +
+					"<:" + "Mastery" + strconv.Itoa(mastery[n+1].ChampionLevel) + ":" + GetEmoji(GetChampion("Mastery"+strconv.Itoa(mastery[n+1].ChampionLevel))) + ">",
+				Inline: true,
+			},
+			{
+				Name:   GetChampion(strconv.Itoa(mastery[n].ChampionID)),
+				Value:  "**" + GetChampion(strconv.Itoa(mastery[n+1].ChampionID)) + "**",
+				Inline: true,
+			},
+			{
+				Name:   "__" + strconv.Itoa(mastery[n].ChampionPoints) + "__",
+				Value:  "__" + "**" + strconv.Itoa(mastery[n+1].ChampionPoints) + "**__",
+				Inline: true,
+			},
+		}
+		embed.Fields = append(embed.Fields, embed2.Fields[0], embed2.Fields[1], embed2.Fields[2])
+		n++
+	}
+	return embed
 }
 
 ///
@@ -445,7 +485,7 @@ func formatItems(participant Participants) string {
 ///
 ///
 ///
-func formatEmbedImages(imageNames []string, rankFileName string) []*discordgo.File {
+func formatEmbedImages(imageNames []string, relativePath string, rankFileName string) []*discordgo.File {
 	var files []*discordgo.File
 
 	for n := 0; n < len(imageNames); n++ {
@@ -472,7 +512,7 @@ func formatEmbedImages(imageNames []string, rankFileName string) []*discordgo.Fi
 			Reader:      file2,
 		})
 	} else {
-		file, _ := os.Open("./championImages/" + rankFileName) // actually champion image for lastmatch & live
+		file, _ := os.Open(relativePath + rankFileName) // actually champion image for lastmatch & live
 		files = append(files, &discordgo.File{
 			Name:        rankFileName,
 			ContentType: "image/png",
