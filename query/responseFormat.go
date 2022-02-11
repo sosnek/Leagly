@@ -140,7 +140,10 @@ func LookupPlayer(playerName string) (send *discordgo.MessageSend, err error) {
 		embed = formatEmbedAuthor(embed, accInfo)
 
 		if matchStatsSlice == nil {
-			return &discordgo.MessageSend{Embed: embed}, errors.New("No rank history found for " + playerName)
+			//Player has a rank, but no ranked matches within the last 30 games
+			files := formatEmbedImages([]string{}, "./assets/", fileName)
+			send = createMessageSend(embed, files)
+			return send, nil
 		}
 
 		playermatchstats := formatMatchStats(matchStatsSlice, accInfo.Puuid)
