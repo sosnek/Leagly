@@ -681,7 +681,7 @@ func getTop3Champions(playerMatchStats PlayerMatchStats) []*PlayerChampions {
 			GamesPlayed: 0,
 		})
 	}
-	// At this point duplicate champions in match history has been combined. Now the program will choose the top 3 champions determined by frequency
+	// At this point duplicate champions in match history has been combined. Now the program will choose the top 3 champions determined by games played
 	for k := 0; k < len(playerMatchStats.PlayerChampions); k++ {
 		if playerChampion[0].GamesPlayed <= playerMatchStats.PlayerChampions[k].GamesPlayed {
 			playerChampion[0] = playerMatchStats.PlayerChampions[k]
@@ -712,30 +712,48 @@ func getTop3Champions(playerMatchStats PlayerMatchStats) []*PlayerChampions {
 // Ranked icon images are locally stored. This method is used to determine which ranked icon image we need.
 func getRankedAsset(rankedStats RankedInfo) string {
 	for n := 0; n < len(rankedStats); n++ {
-		if rankedStats[n].QueueType == "RANKED_SOLO_5x5" || rankedStats[n].QueueType == "RANKED_TEAM_5x5" || rankedStats[n].QueueType == "RANKED_FLEX_SR" {
-			switch {
-			case rankedStats[n].Tier == "IRON":
-				return "Emblem_Iron.png"
-			case rankedStats[n].Tier == "BRONZE":
-				return "Emblem_Bronze.png"
-			case rankedStats[n].Tier == "SILVER":
-				return "Emblem_Silver.png"
-			case rankedStats[n].Tier == "GOLD":
-				return "Emblem_Gold.png"
-			case rankedStats[n].Tier == "PLATINUM":
-				return "Emblem_Platinum.png"
-			case rankedStats[n].Tier == "DIAMOND":
-				return "Emblem_Diamond.png"
-			case rankedStats[n].Tier == "MASTER":
-				return "Emblem_Master.png"
-			case rankedStats[n].Tier == "GRANDMASTER":
-				return "Emblem_Grandmaster.png"
-			case rankedStats[n].Tier == "CHALLENGER":
-				return "Emblem_Challenger.png"
+		if rankedStats[n].QueueType == "RANKED_SOLO_5x5" { //Player can have 2 different ranks in random order. We want to prioritize the solo rank
+			rank := getRankFile(rankedStats[n].Tier)
+			if rank == "" {
+				continue
 			}
+			return rank
+		}
+	}
+	for n := 0; n < len(rankedStats); n++ {
+		if rankedStats[n].QueueType == "RANKED_TEAM_5x5" || rankedStats[n].QueueType == "RANKED_FLEX_SR" {
+			rank := getRankFile(rankedStats[n].Tier)
+			if rank == "" {
+				continue
+			}
+			return rank
 		}
 	}
 	return "UNRANKED.png"
+}
+
+func getRankFile(rank string) string {
+	switch {
+	case rank == "IRON":
+		return "Emblem_Iron.png"
+	case rank == "BRONZE":
+		return "Emblem_Bronze.png"
+	case rank == "SILVER":
+		return "Emblem_Silver.png"
+	case rank == "GOLD":
+		return "Emblem_Gold.png"
+	case rank == "PLATINUM":
+		return "Emblem_Platinum.png"
+	case rank == "DIAMOND":
+		return "Emblem_Diamond.png"
+	case rank == "MASTER":
+		return "Emblem_Master.png"
+	case rank == "GRANDMASTER":
+		return "Emblem_Grandmaster.png"
+	case rank == "CHALLENGER":
+		return "Emblem_Challenger.png"
+	}
+	return ""
 }
 
 ///
@@ -871,7 +889,7 @@ func formatPlayerRankedStats(rankedStats RankedInfo) string {
 			continue
 		}
 		if rankedStats[n].QueueType == "RANKED_SOLO_5x5" || rankedStats[n].QueueType == "RANKED_TEAM_5x5 " || rankedStats[n].QueueType == "RANKED_FLEX_SR" {
-			for k := 0; k < len(rankedStats); k++ {
+			for k := 0; k < len(rankedStats); k++ { //Look again because we want to prioritize solo duo rank over flex rank
 				if rankedStats[k].QueueType == "RANKED_SOLO_5x5" {
 					return rankedStats[k].Tier + " " + rankedStats[k].Rank +
 						" with " + strconv.Itoa(rankedStats[k].LeaguePoints) + " LP. Season W/L: " + strconv.Itoa(rankedStats[k].Wins) + " wins and " + strconv.Itoa(rankedStats[k].Losses) + " losses. WR: " + strconv.Itoa((rankedStats[k].Wins*100)/(rankedStats[k].Wins+rankedStats[k].Losses)) + "%"
