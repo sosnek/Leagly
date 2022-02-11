@@ -682,25 +682,26 @@ func getTop3Champions(playerMatchStats PlayerMatchStats) []*PlayerChampions {
 		})
 	}
 	// At this point duplicate champions in match history has been combined. Now the program will choose the top 3 champions determined by games played
-	for k := 0; k < len(playerMatchStats.PlayerChampions); k++ {
-		if playerChampion[0].GamesPlayed <= playerMatchStats.PlayerChampions[k].GamesPlayed {
-			playerChampion[0] = playerMatchStats.PlayerChampions[k]
+
+	for i := 0; i < len(playerMatchStats.PlayerChampions); i++ {
+		if playerChampion[0].GamesPlayed < playerMatchStats.PlayerChampions[i].GamesPlayed {
+			playerChampion[0] = playerMatchStats.PlayerChampions[i]
+			i = 0
 		}
-	}
-	for k := 0; k < len(playerMatchStats.PlayerChampions); k++ {
-		if playerMatchStats.PlayerChampions[k].Name != playerChampion[0].Name {
-			if playerChampion[1].GamesPlayed <= playerMatchStats.PlayerChampions[k].GamesPlayed {
-				playerChampion[1] = playerMatchStats.PlayerChampions[k]
+		if playerMatchStats.PlayerChampions[i].Name != playerChampion[0].Name {
+			if playerChampion[1].GamesPlayed < playerMatchStats.PlayerChampions[i].GamesPlayed {
+				playerChampion[1] = playerMatchStats.PlayerChampions[i]
+				i = 0
+			}
+		}
+		if playerMatchStats.PlayerChampions[i].Name != playerChampion[0].Name && playerMatchStats.PlayerChampions[i].Name != playerChampion[1].Name {
+			if playerChampion[2].GamesPlayed < playerMatchStats.PlayerChampions[i].GamesPlayed {
+				playerChampion[2] = playerMatchStats.PlayerChampions[i]
+				i = 0
 			}
 		}
 	}
-	for k := 0; k < len(playerMatchStats.PlayerChampions); k++ {
-		if playerMatchStats.PlayerChampions[k].Name != playerChampion[0].Name && playerMatchStats.PlayerChampions[k].Name != playerChampion[1].Name {
-			if playerChampion[2].GamesPlayed <= playerMatchStats.PlayerChampions[k].GamesPlayed {
-				playerChampion[2] = playerMatchStats.PlayerChampions[k]
-			}
-		}
-	}
+
 	for k := 0; k < 3; k++ {
 		if playerChampion[k].GamesPlayed > 0 {
 			playerChampions = append(playerChampions, playerChampion[k])

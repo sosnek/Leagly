@@ -96,7 +96,6 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	// !help
 	if command == config.BotPrefix+"help" {
-		log.Println("Discord ID: " + m.GuildID + "  " + m.Author.Username + ": " + config.BotPrefix + "help")
 		handleHelp(s, m)
 		return
 	}

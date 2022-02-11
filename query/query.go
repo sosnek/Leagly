@@ -263,7 +263,7 @@ func getAccountInfo(playerName string) Summoner {
 }
 
 func InitializedChampStruct() {
-	resp, err := http.Get("http://ddragon.leagueoflegends.com/cdn/12.1.1/data/en_US/champion.json")
+	resp, err := http.Get("http://ddragon.leagueoflegends.com/cdn/12.3.1/data/en_US/champion.json")
 
 	if err != nil {
 		log.Println("Unable to get champion struct data. Error: " + err.Error())

@@ -54,7 +54,7 @@ func lookup(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 
 func mastery(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 	if validateName(args) {
-		log.Println(m.Author.Username + " : >>mastery " + args[1])
+		log.Println("Discord ID: " + m.GuildID + "  " + m.Author.Username + " : " + config.BotPrefix + "mastery " + args[1])
 		if onCoolDown(m.Author.ID, 3) > 0 {
 			s.ChannelMessageSend(m.ChannelID, "You're currently on cooldown. Please wait a few seconds.")
 			log.Println("Discord ID: " + m.GuildID + "  " + m.Author.Username + " on cooldown")
@@ -70,11 +70,12 @@ func mastery(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 }
 
 func handleHelp(s *discordgo.Session, m *discordgo.MessageCreate) {
+	log.Println("Discord ID: " + m.GuildID + "  " + m.Author.Username + ": " + config.BotPrefix + "help")
 	msg := "```Commands:\n"
 	msg = fmt.Sprintf("%s\t%s\n", msg, config.BotPrefix+"help - shows all available commands")
 	msg = fmt.Sprintf("%s\t%s\n", msg, config.BotPrefix+"live <playername> - Checks to see if the player is in a game")
 	msg = fmt.Sprintf("%s\t%s\n", msg, config.BotPrefix+"lastmatch <playername> - shows the players last match stats")
-	msg = fmt.Sprintf("%s\t%s\n", msg, config.BotPrefix+"lookup <playername> - shows ranked history of player```")
+	msg = fmt.Sprintf("%s\t%s\n", msg, config.BotPrefix+"lookup <playername> - shows ranked history of player")
 	msg = fmt.Sprintf("%s\t%s\n", msg, config.BotPrefix+"mastery <playername> - shows mastery stats of player```")
 	s.ChannelMessageSend(m.ChannelID, msg)
 }
