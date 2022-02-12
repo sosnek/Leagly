@@ -169,7 +169,7 @@ func MasteryPlayer(playerName string) (send *discordgo.MessageSend, err error) {
 		if rankedInfo == nil {
 			return send, errors.New("Error getting match results for " + playerName)
 		}
-		fileName := getRankedAsset(RankedInfo(rankedInfo))
+		fileName := getRankedAsset(rankedInfo)
 		masteryStats := getMasteryData(accInfo.Id)
 		if masteryStats == nil {
 			return send, errors.New("Error getting masteries for " + playerName)

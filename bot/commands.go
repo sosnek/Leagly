@@ -86,7 +86,7 @@ func mastery(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 
 func handleHelp(s *discordgo.Session, m *discordgo.MessageCreate) {
 	s.ChannelTyping(m.ChannelID)
-	log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + ": " + config.BotPrefix + "help")
+	log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + config.BotPrefix + "help")
 	msg := "```Commands:\n"
 	msg = fmt.Sprintf("%s\t%s\n", msg, config.BotPrefix+"help - shows all available commands")
 	msg = fmt.Sprintf("%s\t%s\n", msg, config.BotPrefix+"live <playername> - Checks to see if the player is in a game")

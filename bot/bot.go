@@ -88,7 +88,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	if messageContent[0:2] != config.BotPrefix {
+	runes := []rune(args[0])
+	if string(runes[0:2]) != config.BotPrefix {
 		return
 	}
 
