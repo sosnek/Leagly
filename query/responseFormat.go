@@ -6,7 +6,6 @@ import (
 	"image"
 	"image/draw"
 	"image/jpeg"
-	"log"
 	"os"
 	"regexp"
 	"strconv"
@@ -28,6 +27,7 @@ const ARAM = 450
 
 //Lookup match limit maxium last 30 matches
 const MATCH_LIMIT = 30
+const NUM_OF_RANK_GAMES = 10
 
 //!live player
 func IsInGame(playerName string) (send *discordgo.MessageSend, err error) {
@@ -65,7 +65,6 @@ func IsInGame(playerName string) (send *discordgo.MessageSend, err error) {
 		send = createMessageSend(embed, []*discordgo.File{})
 		return send, nil
 	}
-	log.Println("Error getting account info")
 	return send, errors.New("sorry, something went wrong")
 }
 
@@ -85,8 +84,6 @@ func GetLastMatch(playerName string) (send *discordgo.MessageSend, err error) {
 		if matchresults == nil {
 			return send, errors.New("Error getting match results for " + playerName)
 		}
-		//fmt.Println(matchresults) //do some error checking
-		//return formatLastMatchResponse(accInfo.Puuid, matchresults)
 		participant := parseParticipant(accInfo.Puuid, matchresults)
 		fileName := participant.ChampionName + ".png"
 		err = getChampionFile(fileName)
@@ -100,7 +97,6 @@ func GetLastMatch(playerName string) (send *discordgo.MessageSend, err error) {
 		send = createMessageSend(embed, files)
 		return send, nil
 	}
-	log.Println("Error getting account info")
 	return send, errors.New("Sorry something went wrong getting lastmatch info for " + playerName)
 
 }
@@ -124,7 +120,7 @@ func LookupPlayer(playerName string) (send *discordgo.MessageSend, err error) {
 		}
 
 		var matchStatsSlice []MatchResults
-		for n, k := 0, 0; n < len(matchIDs) && k < 10; n++ { // Get 10 games
+		for n, k := 0, 0; n < len(matchIDs) && k < NUM_OF_RANK_GAMES; n++ { // Get 10 games
 			newMatch := getMatch(matchIDs[n])
 			if newMatch == nil {
 				return send, errors.New("Error getting match results for " + playerName)
@@ -185,7 +181,6 @@ func MasteryPlayer(playerName string) (send *discordgo.MessageSend, err error) {
 		send = createMessageSend(embed, files)
 		return send, nil
 	}
-	log.Println("Unable to get accInfo for: " + playerName)
 	return send, errors.New("Unable to get accInfo for: " + playerName)
 }
 
@@ -194,15 +189,6 @@ func getEmbedColour(hasWon bool) int {
 		return 28672 //Green
 	}
 	return 10747904 // Red
-}
-
-func DeleteImages(fileNames []string) {
-	for k := 0; k < len(fileNames); k++ {
-		e := os.Remove(fileNames[k])
-		if e != nil {
-			log.Fatal(e)
-		}
-	}
 }
 
 ///

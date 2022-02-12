@@ -12,52 +12,64 @@ import (
 
 func live(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 	if validateName(args) {
-		log.Println("Discord ID: " + m.GuildID + "  " + m.Author.Username + " : " + config.BotPrefix + "live " + args[1])
+		s.ChannelTyping(m.ChannelID)
+		log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + config.BotPrefix + "live " + args[1])
 		send, err := query.IsInGame(args[1])
 		if err != nil {
-			log.Println("Discord ID: " + m.GuildID + "  " + err.Error())
+			log.Println("Discord server ID: " + m.GuildID + "  " + err.Error())
 			s.ChannelMessageSend(m.ChannelID, err.Error())
 		}
 		s.ChannelMessageSendComplex(m.ChannelID, send)
+	} else {
+		s.ChannelMessageSend(m.ChannelID, "Please follow the command format!")
+		handleHelp(s, m)
 	}
 }
 
 func lastmatch(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 	if validateName(args) {
-		log.Println("Discord ID: " + m.GuildID + "  " + m.Author.Username + " : " + config.BotPrefix + "lastmatch " + args[1])
+		s.ChannelTyping(m.ChannelID)
+		log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + config.BotPrefix + "lastmatch " + args[1])
 		send, err := query.GetLastMatch(args[1])
 		if err != nil {
-			log.Println("Discord ID: " + m.GuildID + "  " + err.Error())
+			log.Println("Discord server ID: " + m.GuildID + "  " + err.Error())
 			s.ChannelMessageSend(m.ChannelID, err.Error())
 		}
 		s.ChannelMessageSendComplex(m.ChannelID, send)
+	} else {
+		s.ChannelMessageSend(m.ChannelID, "Please follow the command format!")
+		handleHelp(s, m)
 	}
 }
 
 func lookup(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 	if validateName(args) {
-		log.Println("Discord ID: " + m.GuildID + "  " + m.Author.Username + " : " + config.BotPrefix + "lookup " + args[1])
+		s.ChannelTyping(m.ChannelID)
+		log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + config.BotPrefix + "lookup " + args[1])
 		if onCoolDown(m.Author.ID, 5) > 0 {
 			s.ChannelMessageSend(m.ChannelID, "You're currently on cooldown. Please wait a few seconds.")
-			log.Println("Discord ID: " + m.GuildID + "  " + m.Author.Username + " on cooldown")
+			log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " on cooldown")
 			return
 		}
 		send, err := query.LookupPlayer(args[1])
 		if err != nil {
-			log.Println("Discord ID: " + m.GuildID + "  " + err.Error())
+			log.Println("Discord server ID: " + m.GuildID + "  " + err.Error())
 			s.ChannelMessageSend(m.ChannelID, err.Error())
 		}
 		s.ChannelMessageSendComplex(m.ChannelID, send)
-		//query.DeleteImages(filesToDelete)
+	} else {
+		s.ChannelMessageSend(m.ChannelID, "Please follow the command format!")
+		handleHelp(s, m)
 	}
 }
 
 func mastery(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 	if validateName(args) {
-		log.Println("Discord ID: " + m.GuildID + "  " + m.Author.Username + " : " + config.BotPrefix + "mastery " + args[1])
+		s.ChannelTyping(m.ChannelID)
+		log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + config.BotPrefix + "mastery " + args[1])
 		if onCoolDown(m.Author.ID, 3) > 0 {
 			s.ChannelMessageSend(m.ChannelID, "You're currently on cooldown. Please wait a few seconds.")
-			log.Println("Discord ID: " + m.GuildID + "  " + m.Author.Username + " on cooldown")
+			log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " on cooldown")
 			return
 		}
 		send, err := query.MasteryPlayer(args[1])
@@ -66,11 +78,15 @@ func mastery(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 			s.ChannelMessageSend(m.ChannelID, err.Error())
 		}
 		s.ChannelMessageSendComplex(m.ChannelID, send)
+	} else {
+		s.ChannelMessageSend(m.ChannelID, "Please follow the command format!")
+		handleHelp(s, m)
 	}
 }
 
 func handleHelp(s *discordgo.Session, m *discordgo.MessageCreate) {
-	log.Println("Discord ID: " + m.GuildID + "  " + m.Author.Username + ": " + config.BotPrefix + "help")
+	s.ChannelTyping(m.ChannelID)
+	log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + ": " + config.BotPrefix + "help")
 	msg := "```Commands:\n"
 	msg = fmt.Sprintf("%s\t%s\n", msg, config.BotPrefix+"help - shows all available commands")
 	msg = fmt.Sprintf("%s\t%s\n", msg, config.BotPrefix+"live <playername> - Checks to see if the player is in a game")
@@ -97,6 +113,8 @@ func onCoolDown(user string, cd float64) float64 {
 	return 0
 }
 
+///Some summoner names can have spaces in them
+/// This method will combine each name piece into a whole string
 func createName(args []string) []string {
 	for n := 2; n < len(args); n++ {
 		args[1] += " " + args[n]

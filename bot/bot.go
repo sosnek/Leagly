@@ -92,7 +92,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		return
 	}
 
-	command := args[0]
+	command := strings.ToLower(args[0])
 
 	// !help
 	if command == config.BotPrefix+"help" {
