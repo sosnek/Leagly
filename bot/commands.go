@@ -3,7 +3,6 @@ package bot
 import (
 	"Leagly/config"
 	"Leagly/query"
-	"fmt"
 	"log"
 	"time"
 
@@ -87,13 +86,8 @@ func mastery(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 func handleHelp(s *discordgo.Session, m *discordgo.MessageCreate) {
 	s.ChannelTyping(m.ChannelID)
 	log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + config.BotPrefix + "help")
-	msg := "```Commands:\n"
-	msg = fmt.Sprintf("%s\t%s\n", msg, config.BotPrefix+"help - shows all available commands")
-	msg = fmt.Sprintf("%s\t%s\n", msg, config.BotPrefix+"live <playername> - Checks to see if the player is in a game")
-	msg = fmt.Sprintf("%s\t%s\n", msg, config.BotPrefix+"lastmatch <playername> - shows the players last match stats")
-	msg = fmt.Sprintf("%s\t%s\n", msg, config.BotPrefix+"lookup <playername> - shows ranked history of player")
-	msg = fmt.Sprintf("%s\t%s\n", msg, config.BotPrefix+"mastery <playername> - shows mastery stats of player```")
-	s.ChannelMessageSend(m.ChannelID, msg)
+
+	s.ChannelMessageSendComplex(m.ChannelID, query.Help())
 }
 
 func onCoolDown(user string, cd float64) float64 {

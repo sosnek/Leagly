@@ -54,7 +54,7 @@ type Participants struct {
 	Item3                       int
 	Item4                       int
 	Item5                       int
-	//AP damage taken and AD damage taken ADD IT
+	NeutralMinionsKilled        int
 }
 
 type LiveGameInfo *struct {
@@ -263,7 +263,7 @@ func getAccountInfo(playerName string) Summoner {
 }
 
 func InitializedChampStruct() {
-	resp, err := http.Get("http://ddragon.leagueoflegends.com/cdn/12.3.1/data/en_US/champion.json")
+	resp, err := http.Get("http://ddragon.leagueoflegends.com/cdn/12.4.1/data/en_US/champion.json")
 
 	if err != nil {
 		log.Println("Unable to get champion struct data. Error: " + err.Error())

@@ -1,6 +1,7 @@
 package query
 
 import (
+	"Leagly/config"
 	"errors"
 	"fmt"
 	"image"
@@ -28,6 +29,20 @@ const ARAM = 450
 //Lookup match limit maxium last 30 matches
 const MATCH_LIMIT = 30
 const NUM_OF_RANK_GAMES = 10
+
+///
+///
+///
+func Help() *discordgo.MessageSend {
+	embed := formatRankedEmbed("", "a", "Here is a list of the available commands for Leagly bot:", 16777215, time.Now())
+	embed.Author = &discordgo.MessageEmbedAuthor{
+		Name:    "Leagly Bot",
+		IconURL: "http://ddragon.leagueoflegends.com/cdn/12.4.1/img/profileicon/1630.png",
+		URL:     "https://discord.com/oauth2/authorize?client_id=930924283599925260&permissions=1074056192&scope=bot",
+	}
+	embed = formatHelpEmbed(embed)
+	return createMessageSend(embed, []*discordgo.File{})
+}
 
 //!live player
 func IsInGame(playerName string) (send *discordgo.MessageSend, err error) {
@@ -231,6 +246,40 @@ func GetEmoji(emojiName string) string {
 ///
 ///
 ///
+func formatHelpEmbed(embed *discordgo.MessageEmbed) *discordgo.MessageEmbed {
+	embed.Fields = []*discordgo.MessageEmbedField{
+		{
+			Name:   config.BotPrefix + "help",
+			Value:  "Shows all available commands",
+			Inline: false,
+		},
+		{
+			Name:   config.BotPrefix + "live <playername>",
+			Value:  "Checks to see if the player is in a game",
+			Inline: false,
+		},
+		{
+			Name:   config.BotPrefix + "lastmatch <playername>",
+			Value:  "Shows the players last match stats",
+			Inline: false,
+		},
+		{
+			Name:   config.BotPrefix + "lookup <playername>",
+			Value:  "Shows ranked history of player",
+			Inline: false,
+		},
+		{
+			Name:   config.BotPrefix + "mastery <playername>",
+			Value:  "Shows mastery stats of player",
+			Inline: false,
+		},
+	}
+	return embed
+}
+
+///
+///
+///
 func formatMasteriesEmbedFields(embed *discordgo.MessageEmbed, mastery Mastery) *discordgo.MessageEmbed {
 	embed2 := &discordgo.MessageEmbed{}
 	for n := 0; n+1 < len(mastery) && n < 10; n++ {
@@ -267,7 +316,7 @@ func formatLastMatchEmbedFields(embed *discordgo.MessageEmbed, matchResults Matc
 	embed.Fields = []*discordgo.MessageEmbedField{
 		{
 			Name:   "CS",
-			Value:  fmt.Sprintf("```%d```", participant.TotalMinionsKilled),
+			Value:  fmt.Sprintf("```%d```", participant.TotalMinionsKilled+participant.NeutralMinionsKilled),
 			Inline: true,
 		},
 		{
