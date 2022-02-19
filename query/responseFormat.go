@@ -7,6 +7,7 @@ import (
 	"image"
 	"image/draw"
 	"image/jpeg"
+	"log"
 	"os"
 	"regexp"
 	"strconv"
@@ -54,19 +55,29 @@ func IsInGame(playerName string) (send *discordgo.MessageSend, err error) {
 			return send, errors.New("sorry, something went wrong")
 		}
 		if liveGameInfo.Status.Status_code == 0 {
+			//var liveGameParticipants []LiveGameParticipants
+
+			//liveGameParticipants = append(liveGameParticipants, liveGameInfo.Participants[2], liveGameInfo.Participants[0], liveGameInfo.Participants[4], liveGameInfo.Participants[3], liveGameInfo.Participants[1], liveGameInfo.Participants[7], liveGameInfo.Participants[5], liveGameInfo.Participants[9], liveGameInfo.Participants[8], liveGameInfo.Participants[6])
+			//liveGameInfo.Participants = liveGameParticipants
+			determineRoles(liveGameInfo.Participants)
 			getTime := time.Now().UTC()
 			elapsed := getTime.Sub(time.Unix(int64((liveGameInfo.GameStartTime / 1000)), 0).UTC())
 			Gametime := fmt.Sprintf("%02d:%02d", (int(elapsed.Seconds()) / 60), (int(elapsed.Seconds()) % 60))
 
 			participant := parseLiveParticipant(accInfo.Id, liveGameInfo)
+			rankPlayers := formatRankedPlayers(liveGameInfo)
+			//get bans as well
+			//bannedChampions := getBannedChampsID(liveGameInfo)
 			champion := GetChampion(strconv.Itoa(participant.ChampionId))
 			err = getChampionFile(champion + ".png")
 			if err != nil {
 				return send, errors.New("Error getting champion file for" + champion)
 			}
+			//Playing as to banned champs
 			embed := formatRankedEmbed(playerName+" Is currently in a "+getMatchType(liveGameInfo.GameQueueConfigId), champion+".png", "Playing as "+champion+". Time: "+Gametime, 71, time.Now())
 			embed = formatEmbedAuthor(embed, accInfo)
 			files := formatEmbedImages([]string{}, "./championImages/", champion+".png")
+			embed = formatLiveMatchEmbedFields(embed, rankPlayers, liveGameInfo, participant)
 			send = createMessageSend(embed, files)
 			return send, nil
 		}
@@ -125,7 +136,7 @@ func LookupPlayer(playerName string) (send *discordgo.MessageSend, err error) {
 		if rankedInfo == nil {
 			return send, errors.New("Error getting match results for " + playerName)
 		}
-		fileName := getRankedAsset(RankedInfo(rankedInfo))
+		fileName := getRankedAsset(rankedInfo)
 		matchIDs, err := getMatchID(accInfo.Puuid, MATCH_LIMIT) // Request MATCH_LIMIT amount of match ID's to be later filtered out for ranked ones
 		if err != nil {
 			return send, errors.New("Error getting match results for " + playerName)
@@ -246,6 +257,89 @@ func GetEmoji(emojiName string) string {
 ///
 ///
 ///
+func determineRoles(liveGameParticipants []LiveGameParticipants) {
+	champPlayRates := ChampionPositions()
+	var liveGameParticipantsBlue []LiveGameParticipants
+	var liveGameParticipantsRed []LiveGameParticipants
+	for i := 0; i < len(liveGameParticipants); i++ {
+		if liveGameParticipants[i].TeamId == 100 {
+			liveGameParticipantsBlue = append(liveGameParticipantsBlue, liveGameParticipants[i])
+		} else {
+			liveGameParticipantsRed = append(liveGameParticipantsRed, liveGameParticipants[i])
+		}
+	}
+	// 1. Determine each role by champion ID for each team
+	// 2. Must not have duplicate roles in each team, so we need to have a back up role(s)
+	// 3. return an object with unique roles and the participant champs
+
+	// filter out champs that are not part of the match
+	// Ex: var playRatesRed []ChampionRole, playRatesRed = append(playRatesRed, getPlayRateChamps(liveGameParticipantsRed)
+	// Ex: var playRatesBlue []ChampionRole, playRatesBlue = append(playRatesBlue, getPlayRateChamps(liveGameParticipantsBlue)
+	champPlayRatesBlueTeam := getCurrentRoles(champPlayRates, liveGameParticipantsBlue)
+	champPlayRatesRedTeam := getCurrentRoles(champPlayRates, liveGameParticipantsRed)
+
+	// Now we restructure the slice
+	// Ex: playRatesRed = reorderRoles(playRatesRed)
+	// Ex: playRatesBlue = reorderRoles(playRatesBlue)
+	determineRoleByPlayRate(champPlayRatesBlueTeam)
+	determineRoleByPlayRate(champPlayRatesRedTeam)
+	//then return the original reordered slice
+	//var reorderedRoles []LiveGameParticipants
+	//reorderedRoles = append(reorderedRoles, playRatesRed[0], playRatesRed[1]... playRatesBlue[3], playRatesBlue[4])
+	//return reorderedRoles
+
+	log.Println(champPlayRates)
+
+}
+
+func determineRoleByPlayRate(champPlayRates []ChampionRole) {
+	roles := []string{"TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"}
+	var ph int
+	var bpr float32
+	var prHolder []float32
+	for k := 0; k < len(champPlayRates); k++ {
+		prHolder = append(prHolder, champPlayRates[k].Top.PlayRate, champPlayRates[k].Jungle.PlayRate, champPlayRates[k].Middle.PlayRate, champPlayRates[k].Bottom.PlayRate, champPlayRates[k].Utility.PlayRate)
+		for n := 0; n < len(prHolder); n++ {
+			if bpr < prHolder[n] {
+				bpr = prHolder[n]
+				champPlayRates[k].Pos = roles[n]
+				champPlayRates[k].PH = bpr
+			}
+		}
+		prHolder = prHolder[:0]
+		bpr = 0
+		fmt.Println(fmt.Sprintf("Role: %s Rate: %f Champ: %s", champPlayRates[k].Pos, champPlayRates[k].PH, GetChampion(strconv.Itoa(champPlayRates[k].ID))))
+	}
+	fmt.Println(GetChampion(strconv.Itoa(champPlayRates[ph].ID)))
+}
+
+func getCurrentRoles(champPlayRates *map[string]ChampionRole, liveGameParticipants []LiveGameParticipants) []ChampionRole {
+	var roles []ChampionRole
+	for k, v := range *champPlayRates {
+		if strconv.Itoa(liveGameParticipants[0].ChampionId) == k {
+			roles = append(roles, v)
+			roles[len(roles)-1].ID = liveGameParticipants[0].ChampionId
+		} else if strconv.Itoa(liveGameParticipants[1].ChampionId) == k {
+			roles = append(roles, v)
+			roles[len(roles)-1].ID = liveGameParticipants[1].ChampionId
+		} else if strconv.Itoa(liveGameParticipants[2].ChampionId) == k {
+			roles = append(roles, v)
+			roles[len(roles)-1].ID = liveGameParticipants[2].ChampionId
+		} else if strconv.Itoa(liveGameParticipants[3].ChampionId) == k {
+			roles = append(roles, v)
+			roles[len(roles)-1].ID = liveGameParticipants[3].ChampionId
+		} else if strconv.Itoa(liveGameParticipants[4].ChampionId) == k {
+			roles = append(roles, v)
+			roles[len(roles)-1].ID = liveGameParticipants[4].ChampionId
+		}
+
+	}
+	return roles
+}
+
+///
+///
+///
 func formatHelpEmbed(embed *discordgo.MessageEmbed) *discordgo.MessageEmbed {
 	embed.Fields = []*discordgo.MessageEmbedField{
 		{
@@ -304,6 +398,67 @@ func formatMasteriesEmbedFields(embed *discordgo.MessageEmbed, mastery Mastery) 
 		}
 		embed.Fields = append(embed.Fields, embed2.Fields[0], embed2.Fields[1], embed2.Fields[2])
 		n++
+	}
+	return embed
+}
+
+///
+///
+///
+func formatLiveMatchEmbedFields(embed *discordgo.MessageEmbed, rankedPlayers []*RankedInfo, liveGameInfo LiveGameInfo, participant LiveGameParticipants) *discordgo.MessageEmbed {
+	embed.Fields = []*discordgo.MessageEmbedField{
+		// {
+		// 	Name:   "CS",
+		// 	Value:  fmt.Sprintf("```%d```", participant.TotalMinionsKilled+participant.NeutralMinionsKilled),
+		// 	Inline: true,
+		// },
+		// {
+		// 	Name:   "DMG Dealt",
+		// 	Value:  fmt.Sprintf("```%d```", participant.TotalDamageDealtToChampions),
+		// 	Inline: true,
+		// },
+		// {
+		// 	Name:   "DMG Taken",
+		// 	Value:  fmt.Sprintf("```%d```", participant.TotalDamageTaken),
+		// 	Inline: true,
+		// },
+		{
+			Name:   "\u200b",
+			Value:  "\u200b",
+			Inline: true,
+		},
+		{
+			Name:   "\u200b",
+			Value:  "Blue Team",
+			Inline: true,
+		},
+		{
+			Name:   "\u200b",
+			Value:  "Red Team",
+			Inline: true,
+		},
+	}
+	embed2 := &discordgo.MessageEmbed{}
+	roles := []string{"<:PositionTop:" + GetEmoji("PositionTop") + ">", "<:PositionJungle:" + GetEmoji("PositionJungle") + ">", "<:PositionMid:" + GetEmoji("PositionMid") + ">", "<:PositionBot:" + GetEmoji("PositionBot") + ">", "<:PositionSupport:" + GetEmoji("PositionSupport") + ">"}
+	for k := 0; k < len(rankedPlayers)-5; k++ {
+		embed2.Fields = []*discordgo.MessageEmbedField{
+			{
+				Name:   roles[k],
+				Value:  "\u200b",
+				Inline: true,
+			},
+			{
+				Name:   "> __<:" + GetChampion(strconv.Itoa(liveGameInfo.Participants[k].ChampionId)) + ":" + GetEmoji(GetChampion(strconv.Itoa(liveGameInfo.Participants[k].ChampionId))) + ">" + rankedPlayers[k].SummonerName + "__",
+				Value:  fmt.Sprintf(">    WR: %d  ", rankedPlayers[k].Wins/(rankedPlayers[k].Wins+rankedPlayers[k].Losses)),
+				Inline: true,
+			},
+			{
+				Name:   "> __**<:" + GetChampion(strconv.Itoa(liveGameInfo.Participants[k+5].ChampionId)) + ":" + GetEmoji(GetChampion(strconv.Itoa(liveGameInfo.Participants[k+5].ChampionId))) + ">" + rankedPlayers[k+5].SummonerName + "**__",
+				Value:  fmt.Sprintf(">    WR: %d  ", rankedPlayers[k].Wins/(rankedPlayers[k+5].Wins+rankedPlayers[k+5].Losses)),
+				Inline: true,
+			},
+		}
+		embed.Fields = append(embed.Fields, embed2.Fields[0], embed2.Fields[1], embed2.Fields[2])
 	}
 	return embed
 }
@@ -749,7 +904,7 @@ func getTop3Champions(playerMatchStats PlayerMatchStats) []*PlayerChampions {
 }
 
 // Ranked icon images are locally stored. This method is used to determine which ranked icon image we need.
-func getRankedAsset(rankedStats RankedInfo) string {
+func getRankedAsset(rankedStats []*RankedInfo) string {
 	for n := 0; n < len(rankedStats); n++ {
 		if rankedStats[n].QueueType == "RANKED_SOLO_5x5" { //Player can have 2 different ranks in random order. We want to prioritize the solo rank
 			rank := getRankFile(rankedStats[n].Tier)
@@ -903,6 +1058,26 @@ func mergeImages(imageName []string) string {
 	return "./output.png"
 }
 
+///
+///
+///
+func formatRankedPlayers(liveGameInfo LiveGameInfo) []*RankedInfo {
+	var rankedPlayers []*RankedInfo
+	for i := 0; i < len(liveGameInfo.Participants); i++ {
+		rankHistory := getRankedInfo(liveGameInfo.Participants[i].SummonerId)
+		for n := 0; n < len(rankHistory); n++ {
+			if rankHistory[n].QueueType == "RANKED_SOLO_5x5" {
+				rankedPlayers = append(rankedPlayers, rankHistory[n])
+				break
+			}
+		}
+		if len(rankedPlayers) <= i {
+			rankedPlayers = append(rankedPlayers, &RankedInfo{Tier: "NA", Rank: "NA", Losses: 1, SummonerName: liveGameInfo.Participants[i].SummonerName})
+		}
+	}
+	return rankedPlayers
+}
+
 func formatMasteries(masteryStats Mastery) string {
 	var iterations int
 	if len(masteryStats) < 10 {
@@ -922,7 +1097,7 @@ func formatMasteries(masteryStats Mastery) string {
 ///
 ///
 ///
-func formatPlayerRankedStats(rankedStats RankedInfo) string {
+func formatPlayerRankedStats(rankedStats []*RankedInfo) string {
 	for n := 0; n < len(rankedStats); n++ {
 		if rankedStats[n].QueueType == "RANKED_TFT_PAIRS" {
 			continue

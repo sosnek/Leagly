@@ -71,6 +71,7 @@ type LiveGameParticipants struct {
 	ChampionId   int
 	SummonerName string
 	SummonerId   string
+	TeamId       int
 }
 
 type Status struct {
@@ -78,7 +79,7 @@ type Status struct {
 	Status_code int
 }
 
-type RankedInfo []*struct {
+type RankedInfo struct {
 	LeagueID     string
 	QueueType    string
 	Tier         string
@@ -94,10 +95,6 @@ type Mastery []*struct {
 	ChampionLevel  int
 	ChampionPoints int
 	LastPlayTime   int64
-}
-
-type Champion struct {
-	Key string
 }
 
 type PlayerMatchStats struct {
@@ -126,6 +123,32 @@ type PlayerChampions struct {
 	Assists     int
 	GamesPlayed int
 }
+type Champion struct {
+	Key string
+}
+
+type ChampionRole struct {
+	ID   int
+	Pos  string
+	Sum1 int
+	Sum2 int
+	PH   float32
+	Top  struct {
+		PlayRate float32
+	} `json:"TOP"`
+	Jungle struct {
+		PlayRate float32
+	} `json:"JUNGLE"`
+	Middle struct {
+		PlayRate float32
+	} `json:"MIDDLE"`
+	Bottom struct {
+		PlayRate float32
+	} `json:"BOTTOM"`
+	Utility struct {
+		PlayRate float32
+	} `json:"UTILITY"`
+}
 
 ///
 ///
@@ -151,9 +174,9 @@ func getMasteryData(accID string) Mastery {
 	return mastery
 }
 
-func getRankedInfo(accID string) RankedInfo {
+func getRankedInfo(accID string) []*RankedInfo {
 	resp, err := http.Get("https://na1.api.riotgames.com/lol/league/v4/entries/by-summoner/" + accID + "?api_key=" + config.ApiKey)
-	var rankedInfo RankedInfo
+	var rankedInfo []*RankedInfo
 	if err != nil {
 		log.Println("Unable to get ranked info. Error: " + err.Error())
 		return rankedInfo
@@ -262,27 +285,6 @@ func getAccountInfo(playerName string) Summoner {
 
 }
 
-func InitializedChampStruct() {
-	resp, err := http.Get("http://ddragon.leagueoflegends.com/cdn/12.4.1/data/en_US/champion.json")
-
-	if err != nil {
-		log.Println("Unable to get champion struct data. Error: " + err.Error())
-		return
-	}
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Println("Unable to read champion struct data. Error: " + err.Error())
-		return
-	}
-	//Convert the body to type string
-	sb := string(body)
-
-	var objmap map[string]json.RawMessage
-	json.Unmarshal([]byte(sb), &objmap)
-	json.Unmarshal(objmap["data"], &champ3) //fuck you :)
-}
-
 func downloadFile(URL, fileName string) error {
 	//Get the response bytes from the url
 	response, err := http.Get(URL)
@@ -312,4 +314,48 @@ func downloadFile(URL, fileName string) error {
 	}
 
 	return nil
+}
+
+func InitializedChampStruct() {
+	resp, err := http.Get("http://ddragon.leagueoflegends.com/cdn/12.4.1/data/en_US/champion.json")
+
+	if err != nil {
+		log.Println("Unable to get champion struct data. Error: " + err.Error())
+		return
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Println("Unable to read champion struct data. Error: " + err.Error())
+		return
+	}
+	//Convert the body to type string
+	sb := string(body)
+
+	var objmap map[string]json.RawMessage
+	json.Unmarshal([]byte(sb), &objmap)
+	json.Unmarshal(objmap["data"], &champ3) //fuck you :)
+}
+
+func ChampionPositions() *map[string]ChampionRole {
+	resp, err := http.Get("https://cdn.merakianalytics.com/riot/lol/resources/latest/en-US/championrates.json")
+	if err != nil {
+		log.Println("Unable to get champion role data. Error: " + err.Error())
+		return nil
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Println("Unable to read champion role data. Error: " + err.Error())
+		return nil
+	}
+	//Convert the body to type string
+	sb := string(body)
+
+	var objmap map[string]json.RawMessage
+	var champRole *map[string]ChampionRole
+	json.Unmarshal([]byte(sb), &objmap)
+	json.Unmarshal(objmap["data"], &champRole)
+
+	return champRole
 }
