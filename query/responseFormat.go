@@ -7,7 +7,6 @@ import (
 	"image"
 	"image/draw"
 	"image/jpeg"
-	"log"
 	"os"
 	"regexp"
 	"strconv"
@@ -288,8 +287,6 @@ func determineRoles(liveGameParticipants []LiveGameParticipants) {
 	//reorderedRoles = append(reorderedRoles, playRatesRed[0], playRatesRed[1]... playRatesBlue[3], playRatesBlue[4])
 	//return reorderedRoles
 
-	log.Println(champPlayRates)
-
 }
 
 func determineRoleByPlayRate(champPlayRates []ChampionRole) {
@@ -306,7 +303,7 @@ func determineRoleByPlayRate(champPlayRates []ChampionRole) {
 				champPlayRates[k].PH = bpr
 			}
 		}
-		prHolder = prHolder[:0]
+		prHolder = prHolder[:0] //still could have duplicates
 		bpr = 0
 		fmt.Println(fmt.Sprintf("Role: %s Rate: %f Champ: %s", champPlayRates[k].Pos, champPlayRates[k].PH, GetChampion(strconv.Itoa(champPlayRates[k].ID))))
 	}
@@ -979,7 +976,7 @@ func parseParticipant(puuid string, matchresults MatchResults) Participants {
 	return matchresults.Info.Participants[i]
 }
 
-///
+/// same method as above but could not reuse because livegame is pulled into a different data object
 ///
 ///
 func parseLiveParticipant(sumID string, liveGameInfo LiveGameInfo) LiveGameParticipants {

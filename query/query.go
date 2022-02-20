@@ -337,20 +337,35 @@ func InitializedChampStruct() {
 	json.Unmarshal(objmap["data"], &champ3) //fuck you :)
 }
 
-func ChampionPositions() *map[string]ChampionRole {
-	resp, err := http.Get("https://cdn.merakianalytics.com/riot/lol/resources/latest/en-US/championrates.json")
-	if err != nil {
-		log.Println("Unable to get champion role data. Error: " + err.Error())
-		return nil
-	}
+// func ChampionPositions() *map[string]ChampionRole {
+// 	resp, err := http.Get("https://cdn.merakianalytics.com/riot/lol/resources/latest/en-US/championrates.json")
+// 	if err != nil {
+// 		log.Println("Unable to get champion role data. Error: " + err.Error())
+// 		return nil
+// 	}
 
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		log.Println("Unable to read champion role data. Error: " + err.Error())
-		return nil
-	}
+// 	body, err := ioutil.ReadAll(resp.Body)
+// 	if err != nil {
+// 		log.Println("Unable to read champion role data. Error: " + err.Error())
+// 		return nil
+// 	}
+// 	//Convert the body to type string
+// 	sb := string(body)
+
+// 	var objmap map[string]json.RawMessage
+// 	var champRole *map[string]ChampionRole
+// 	json.Unmarshal([]byte(sb), &objmap)
+// 	json.Unmarshal(objmap["data"], &champRole)
+
+// 	return champRole
+// }
+
+//Merakianalytics stopped updating their data so for now I will keep a local version that will need manual updating.
+func ChampionPositions() *map[string]ChampionRole {
+
+	file, _ := ioutil.ReadFile("championRoleRates/championrates.json")
 	//Convert the body to type string
-	sb := string(body)
+	sb := string(file)
 
 	var objmap map[string]json.RawMessage
 	var champRole *map[string]ChampionRole
