@@ -1,7 +1,6 @@
 package query
 
 import (
-	"Leagly/config"
 	"errors"
 	"fmt"
 	"image"
@@ -10,7 +9,6 @@ import (
 	"os"
 	"regexp"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
@@ -54,11 +52,8 @@ func IsInGame(playerName string) (send *discordgo.MessageSend, err error) {
 			return send, errors.New("sorry, something went wrong")
 		}
 		if liveGameInfo.Status.Status_code == 0 {
-			//var liveGameParticipants []LiveGameParticipants
 
-			//liveGameParticipants = append(liveGameParticipants, liveGameInfo.Participants[2], liveGameInfo.Participants[0], liveGameInfo.Participants[4], liveGameInfo.Participants[3], liveGameInfo.Participants[1], liveGameInfo.Participants[7], liveGameInfo.Participants[5], liveGameInfo.Participants[9], liveGameInfo.Participants[8], liveGameInfo.Participants[6])
-			//liveGameInfo.Participants = liveGameParticipants
-			determineRoles(liveGameInfo.Participants)
+			liveGameInfo.Participants = determineRoles(liveGameInfo.Participants)
 			getTime := time.Now().UTC()
 			elapsed := getTime.Sub(time.Unix(int64((liveGameInfo.GameStartTime / 1000)), 0).UTC())
 			Gametime := fmt.Sprintf("%02d:%02d", (int(elapsed.Seconds()) / 60), (int(elapsed.Seconds()) % 60))
@@ -72,7 +67,7 @@ func IsInGame(playerName string) (send *discordgo.MessageSend, err error) {
 			if err != nil {
 				return send, errors.New("Error getting champion file for" + champion)
 			}
-			//Playing as to banned champs
+
 			embed := formatRankedEmbed(playerName+" Is currently in a "+getMatchType(liveGameInfo.GameQueueConfigId), champion+".png", "Playing as "+champion+". Time: "+Gametime, 71, time.Now())
 			embed = formatEmbedAuthor(embed, accInfo)
 			files := formatEmbedImages([]string{}, "./championImages/", champion+".png")
@@ -209,24 +204,6 @@ func MasteryPlayer(playerName string) (send *discordgo.MessageSend, err error) {
 	return send, errors.New("Unable to get accInfo for: " + playerName)
 }
 
-func getEmbedColour(hasWon bool) int {
-	if hasWon {
-		return 28672 //Green
-	}
-	return 10747904 // Red
-}
-
-///
-///
-///
-func createMessageSend(embed *discordgo.MessageEmbed, files []*discordgo.File) *discordgo.MessageSend {
-	send := &discordgo.MessageSend{
-		Embed: embed,
-		Files: files,
-	}
-	return send
-}
-
 func InitEmojis(emoji [][]*discordgo.Emoji) {
 	emojis = emoji
 }
@@ -256,7 +233,7 @@ func GetEmoji(emojiName string) string {
 ///
 ///
 ///
-func determineRoles(liveGameParticipants []LiveGameParticipants) {
+func determineRoles(liveGameParticipants []LiveGameParticipants) []LiveGameParticipants {
 	champPlayRates := ChampionPositions()
 	var liveGameParticipantsBlue []LiveGameParticipants
 	var liveGameParticipantsRed []LiveGameParticipants
@@ -267,389 +244,178 @@ func determineRoles(liveGameParticipants []LiveGameParticipants) {
 			liveGameParticipantsRed = append(liveGameParticipantsRed, liveGameParticipants[i])
 		}
 	}
-	// 1. Determine each role by champion ID for each team
-	// 2. Must not have duplicate roles in each team, so we need to have a back up role(s)
-	// 3. return an object with unique roles and the participant champs
 
 	// filter out champs that are not part of the match
-	// Ex: var playRatesRed []ChampionRole, playRatesRed = append(playRatesRed, getPlayRateChamps(liveGameParticipantsRed)
-	// Ex: var playRatesBlue []ChampionRole, playRatesBlue = append(playRatesBlue, getPlayRateChamps(liveGameParticipantsBlue)
 	champPlayRatesBlueTeam := getCurrentRoles(champPlayRates, liveGameParticipantsBlue)
 	champPlayRatesRedTeam := getCurrentRoles(champPlayRates, liveGameParticipantsRed)
 
-	// Now we restructure the slice
-	// Ex: playRatesRed = reorderRoles(playRatesRed)
-	// Ex: playRatesBlue = reorderRoles(playRatesBlue)
-	determineRoleByPlayRate(champPlayRatesBlueTeam)
-	determineRoleByPlayRate(champPlayRatesRedTeam)
-	//then return the original reordered slice
-	//var reorderedRoles []LiveGameParticipants
-	//reorderedRoles = append(reorderedRoles, playRatesRed[0], playRatesRed[1]... playRatesBlue[3], playRatesBlue[4])
-	//return reorderedRoles
+	champPlayRatesBlueTeam = determineRoleByChampionPR(champPlayRatesBlueTeam)
+	champPlayRatesRedTeam = determineRoleByChampionPR(champPlayRatesRedTeam)
 
-}
-
-func determineRoleByPlayRate(champPlayRates []ChampionRole) {
 	roles := []string{"TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"}
-	var ph int
-	var bpr float32
+	var reorderedParticipants []LiveGameParticipants
+	// Now we restructure the slice
+	for x := 0; x < len(roles); x++ {
+		for k := 0; k < len(champPlayRatesBlueTeam); k++ {
+			if champPlayRatesBlueTeam[k].championRole.role == roles[x] {
+				reorderedParticipants = append(reorderedParticipants, champPlayRatesBlueTeam[k])
+				break
+			}
+		}
+	}
+	for x := 0; x < len(roles); x++ {
+		for k := 0; k < len(champPlayRatesRedTeam); k++ {
+			if champPlayRatesRedTeam[k].championRole.role == roles[x] {
+				reorderedParticipants = append(reorderedParticipants, champPlayRatesRedTeam[k])
+				break
+			}
+		}
+	}
+	return reorderedParticipants
+}
+
+func determineRoleByChampionPR(liveGameParticipants []LiveGameParticipants) []LiveGameParticipants {
+	roles := []string{"TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"}
+	var bpr float32 //bestplayrate
 	var prHolder []float32
-	for k := 0; k < len(champPlayRates); k++ {
-		prHolder = append(prHolder, champPlayRates[k].Top.PlayRate, champPlayRates[k].Jungle.PlayRate, champPlayRates[k].Middle.PlayRate, champPlayRates[k].Bottom.PlayRate, champPlayRates[k].Utility.PlayRate)
+	//var tmp []ChampionRole
+	set := make(map[string]struct{})
+	mapKey := -1
+	//start with a loop that iterates through each champion in the game
+
+	for k := 0; k < len(liveGameParticipants); k++ {
+		//grab all the playrates from each role for champion K
+		prHolder = append(prHolder, liveGameParticipants[k].championRole.Top.PlayRate, liveGameParticipants[k].championRole.Jungle.PlayRate, liveGameParticipants[k].championRole.Middle.PlayRate, liveGameParticipants[k].championRole.Bottom.PlayRate, liveGameParticipants[k].championRole.Utility.PlayRate)
 		for n := 0; n < len(prHolder); n++ {
-			if bpr < prHolder[n] {
-				bpr = prHolder[n]
-				champPlayRates[k].Pos = roles[n]
-				champPlayRates[k].PH = bpr
-			}
-		}
-		prHolder = prHolder[:0] //still could have duplicates
-		bpr = 0
-		fmt.Println(fmt.Sprintf("Role: %s Rate: %f Champ: %s", champPlayRates[k].Pos, champPlayRates[k].PH, GetChampion(strconv.Itoa(champPlayRates[k].ID))))
-	}
-	fmt.Println(GetChampion(strconv.Itoa(champPlayRates[ph].ID)))
-}
-
-func getCurrentRoles(champPlayRates *map[string]ChampionRole, liveGameParticipants []LiveGameParticipants) []ChampionRole {
-	var roles []ChampionRole
-	for k, v := range *champPlayRates {
-		if strconv.Itoa(liveGameParticipants[0].ChampionId) == k {
-			roles = append(roles, v)
-			roles[len(roles)-1].ID = liveGameParticipants[0].ChampionId
-		} else if strconv.Itoa(liveGameParticipants[1].ChampionId) == k {
-			roles = append(roles, v)
-			roles[len(roles)-1].ID = liveGameParticipants[1].ChampionId
-		} else if strconv.Itoa(liveGameParticipants[2].ChampionId) == k {
-			roles = append(roles, v)
-			roles[len(roles)-1].ID = liveGameParticipants[2].ChampionId
-		} else if strconv.Itoa(liveGameParticipants[3].ChampionId) == k {
-			roles = append(roles, v)
-			roles[len(roles)-1].ID = liveGameParticipants[3].ChampionId
-		} else if strconv.Itoa(liveGameParticipants[4].ChampionId) == k {
-			roles = append(roles, v)
-			roles[len(roles)-1].ID = liveGameParticipants[4].ChampionId
-		}
-
-	}
-	return roles
-}
-
-///
-///
-///
-func formatHelpEmbed(embed *discordgo.MessageEmbed) *discordgo.MessageEmbed {
-	embed.Fields = []*discordgo.MessageEmbedField{
-		{
-			Name:   config.BotPrefix + "help",
-			Value:  "Shows all available commands",
-			Inline: false,
-		},
-		{
-			Name:   config.BotPrefix + "live <playername>",
-			Value:  "Checks to see if the player is in a game",
-			Inline: false,
-		},
-		{
-			Name:   config.BotPrefix + "lastmatch <playername>",
-			Value:  "Shows the players last match stats",
-			Inline: false,
-		},
-		{
-			Name:   config.BotPrefix + "lookup <playername>",
-			Value:  "Shows ranked history of player",
-			Inline: false,
-		},
-		{
-			Name:   config.BotPrefix + "mastery <playername>",
-			Value:  "Shows mastery stats of player",
-			Inline: false,
-		},
-	}
-	return embed
-}
-
-///
-///
-///
-func formatMasteriesEmbedFields(embed *discordgo.MessageEmbed, mastery Mastery) *discordgo.MessageEmbed {
-	embed2 := &discordgo.MessageEmbed{}
-	for n := 0; n+1 < len(mastery) && n < 10; n++ {
-		embed2.Fields = []*discordgo.MessageEmbedField{
-			{
-				Name: "> <:" + strconv.Itoa(mastery[n].ChampionID) + ":" + GetEmoji(GetChampion(strconv.Itoa(mastery[n].ChampionID))) + ">" +
-					"<:" + "Mastery" + strconv.Itoa(mastery[n].ChampionLevel) + ":" + GetEmoji(GetChampion("Mastery"+strconv.Itoa(mastery[n].ChampionLevel))) + ">",
-				Value: "> <:" + strconv.Itoa(mastery[n+1].ChampionID) + ":" + GetEmoji(GetChampion(strconv.Itoa(mastery[n+1].ChampionID))) + ">" +
-					"<:" + "Mastery" + strconv.Itoa(mastery[n+1].ChampionLevel) + ":" + GetEmoji(GetChampion("Mastery"+strconv.Itoa(mastery[n+1].ChampionLevel))) + ">",
-				Inline: true,
-			},
-			{
-				Name:   GetChampion(strconv.Itoa(mastery[n].ChampionID)),
-				Value:  "**" + GetChampion(strconv.Itoa(mastery[n+1].ChampionID)) + "**",
-				Inline: true,
-			},
-			{
-				Name:   "__" + strconv.Itoa(mastery[n].ChampionPoints) + "__",
-				Value:  "__" + "**" + strconv.Itoa(mastery[n+1].ChampionPoints) + "**__",
-				Inline: true,
-			},
-		}
-		embed.Fields = append(embed.Fields, embed2.Fields[0], embed2.Fields[1], embed2.Fields[2])
-		n++
-	}
-	return embed
-}
-
-///
-///
-///
-func formatLiveMatchEmbedFields(embed *discordgo.MessageEmbed, rankedPlayers []*RankedInfo, liveGameInfo LiveGameInfo, participant LiveGameParticipants) *discordgo.MessageEmbed {
-	embed.Fields = []*discordgo.MessageEmbedField{
-		// {
-		// 	Name:   "CS",
-		// 	Value:  fmt.Sprintf("```%d```", participant.TotalMinionsKilled+participant.NeutralMinionsKilled),
-		// 	Inline: true,
-		// },
-		// {
-		// 	Name:   "DMG Dealt",
-		// 	Value:  fmt.Sprintf("```%d```", participant.TotalDamageDealtToChampions),
-		// 	Inline: true,
-		// },
-		// {
-		// 	Name:   "DMG Taken",
-		// 	Value:  fmt.Sprintf("```%d```", participant.TotalDamageTaken),
-		// 	Inline: true,
-		// },
-		{
-			Name:   "\u200b",
-			Value:  "\u200b",
-			Inline: true,
-		},
-		{
-			Name:   "\u200b",
-			Value:  "Blue Team",
-			Inline: true,
-		},
-		{
-			Name:   "\u200b",
-			Value:  "Red Team",
-			Inline: true,
-		},
-	}
-	embed2 := &discordgo.MessageEmbed{}
-	roles := []string{"<:PositionTop:" + GetEmoji("PositionTop") + ">", "<:PositionJungle:" + GetEmoji("PositionJungle") + ">", "<:PositionMid:" + GetEmoji("PositionMid") + ">", "<:PositionBot:" + GetEmoji("PositionBot") + ">", "<:PositionSupport:" + GetEmoji("PositionSupport") + ">"}
-	for k := 0; k < len(rankedPlayers)-5; k++ {
-		embed2.Fields = []*discordgo.MessageEmbedField{
-			{
-				Name:   roles[k],
-				Value:  "\u200b",
-				Inline: true,
-			},
-			{
-				Name:   "> __<:" + GetChampion(strconv.Itoa(liveGameInfo.Participants[k].ChampionId)) + ":" + GetEmoji(GetChampion(strconv.Itoa(liveGameInfo.Participants[k].ChampionId))) + ">" + rankedPlayers[k].SummonerName + "__",
-				Value:  fmt.Sprintf(">    WR: %d  ", rankedPlayers[k].Wins/(rankedPlayers[k].Wins+rankedPlayers[k].Losses)),
-				Inline: true,
-			},
-			{
-				Name:   "> __**<:" + GetChampion(strconv.Itoa(liveGameInfo.Participants[k+5].ChampionId)) + ":" + GetEmoji(GetChampion(strconv.Itoa(liveGameInfo.Participants[k+5].ChampionId))) + ">" + rankedPlayers[k+5].SummonerName + "**__",
-				Value:  fmt.Sprintf(">    WR: %d  ", rankedPlayers[k].Wins/(rankedPlayers[k+5].Wins+rankedPlayers[k+5].Losses)),
-				Inline: true,
-			},
-		}
-		embed.Fields = append(embed.Fields, embed2.Fields[0], embed2.Fields[1], embed2.Fields[2])
-	}
-	return embed
-}
-
-///
-///
-///
-func formatLastMatchEmbedFields(embed *discordgo.MessageEmbed, matchResults MatchResults, puuid string) *discordgo.MessageEmbed {
-	participant := parseParticipant(puuid, matchResults)
-	embed.Fields = []*discordgo.MessageEmbedField{
-		{
-			Name:   "CS",
-			Value:  fmt.Sprintf("```%d```", participant.TotalMinionsKilled+participant.NeutralMinionsKilled),
-			Inline: true,
-		},
-		{
-			Name:   "DMG Dealt",
-			Value:  fmt.Sprintf("```%d```", participant.TotalDamageDealtToChampions),
-			Inline: true,
-		},
-		{
-			Name:   "DMG Taken",
-			Value:  fmt.Sprintf("```%d```", participant.TotalDamageTaken),
-			Inline: true,
-		},
-		{
-			Name:   "\u200b",
-			Value:  "\u200b",
-			Inline: true,
-		},
-		{
-			Name:   "\u200b",
-			Value:  "Blue Team",
-			Inline: true,
-		},
-		{
-			Name:   "\u200b",
-			Value:  "Red Team",
-			Inline: true,
-		},
-	}
-	embed2 := &discordgo.MessageEmbed{}
-	roles := []string{"<:PositionTop:" + GetEmoji("PositionTop") + ">", "<:PositionJungle:" + GetEmoji("PositionJungle") + ">", "<:PositionMid:" + GetEmoji("PositionMid") + ">", "<:PositionBot:" + GetEmoji("PositionBot") + ">", "<:PositionSupport:" + GetEmoji("PositionSupport") + ">"}
-	for k := 0; k < len(matchResults.Info.Participants)-5; k++ {
-		embed2.Fields = []*discordgo.MessageEmbedField{
-			{
-				Name:   roles[k],
-				Value:  "\u200b",
-				Inline: true,
-			},
-			{
-				Name:   "> __<:" + matchResults.Info.Participants[k].ChampionName + ":" + GetEmoji(matchResults.Info.Participants[k].ChampionName) + ">" + matchResults.Info.Participants[k].SummonerName + "__",
-				Value:  fmt.Sprintf(">    %d / %d / %d ", matchResults.Info.Participants[k].Kills, matchResults.Info.Participants[k].Deaths, matchResults.Info.Participants[k].Assists),
-				Inline: true,
-			},
-			{
-				Name:   "> __**<:" + matchResults.Info.Participants[k+5].ChampionName + ":" + GetEmoji(matchResults.Info.Participants[k+5].ChampionName) + ">" + matchResults.Info.Participants[k+5].SummonerName + "**__",
-				Value:  fmt.Sprintf(">    %d / %d / %d ", matchResults.Info.Participants[k+5].Kills, matchResults.Info.Participants[k+5].Deaths, matchResults.Info.Participants[k+5].Assists),
-				Inline: true,
-			},
-		}
-		embed.Fields = append(embed.Fields, embed2.Fields[0], embed2.Fields[1], embed2.Fields[2])
-	}
-	return embed
-}
-
-///
-///
-///
-func formatPlayerLookupEmbedFields(embed *discordgo.MessageEmbed, playerMatchStats PlayerMatchStats, top3Champs []string) *discordgo.MessageEmbed {
-
-	if len(top3Champs) < 1 {
-		return embed
-	}
-	champData := []string{"\u200b", "\u200b", "\u200b", "\u200b", "\u200b", "\u200b"}
-
-	var totalkills int
-	var totalDeaths int
-	var totalWins int
-	var totalLoss int
-	var totalAssist int
-	for k := 0; k < len(playerMatchStats.PlayerChampions); k++ {
-		totalkills += playerMatchStats.PlayerChampions[k].Kills
-		totalDeaths += playerMatchStats.PlayerChampions[k].Deaths
-		totalWins += playerMatchStats.PlayerChampions[k].Wins
-		totalLoss += playerMatchStats.PlayerChampions[k].Loss
-		totalAssist += playerMatchStats.PlayerChampions[k].Assists
-	}
-
-	// colourCypher := "css"
-	winRate := (totalWins * 100) / (totalWins + totalLoss)
-	// if winRate < 50 {
-	// 	colourCypher = "diff "
-	// }
-	pickRate1, pickRate2 := getRole(playerMatchStats)
-	KDA := fmt.Sprintf("```%dG %dW %dL (%d%%)\t \t %.1f / %.1f / %.1f KDA```", totalWins+totalLoss, totalWins, totalLoss, winRate,
-		float64(totalkills/(totalWins+totalLoss)), float64(totalDeaths/(totalWins+totalLoss)), float64(totalAssist/(totalWins+totalLoss)))
-	KDA1 := fmt.Sprintf("  Pick Rate %d%%", (pickRate1*100)/(totalWins+totalLoss))
-	KDA2 := fmt.Sprintf("  Pick Rate %d%%", (pickRate2*100)/(totalWins+totalLoss))
-
-	for j := 0; j < len(top3Champs); j++ { // This loop will iterate over the match history object that contains combined duplicate champion data. Creates unique data such as KDA per champion and win rates
-		for k := 0; k < len(playerMatchStats.PlayerChampions); k++ {
-			if top3Champs[j] == playerMatchStats.PlayerChampions[k].Name {
-				if playerMatchStats.PlayerChampions[k].Deaths == 0 {
-					playerMatchStats.PlayerChampions[k].Deaths = 1
+			for m := 0; m < len(liveGameParticipants[k].championRole.skipRole); m++ {
+				if liveGameParticipants[k].championRole.skipRole[m] == roles[n] {
+					n++
+					break
 				}
-				champData[j] = fmt.Sprintf("WR:%d%% %dW|%dL\nKDA: %.1f", ((playerMatchStats.PlayerChampions[k].Wins * 100) / playerMatchStats.PlayerChampions[k].GamesPlayed),
-					playerMatchStats.PlayerChampions[k].Wins, playerMatchStats.PlayerChampions[k].Loss, (float64(playerMatchStats.PlayerChampions[k].Kills+playerMatchStats.PlayerChampions[k].Assists))/(float64(playerMatchStats.PlayerChampions[k].Deaths)))
-				champData[j+3] = playerMatchStats.PlayerChampions[k].Name
+			}
+			if n >= len(prHolder) {
+				continue
+			}
+			if bpr < prHolder[n] {
+				//We should select the best playrate before checking for duplicates, not the current playrate
+				if _, ok := set[roles[n]]; ok { //check for duplicate roles here, but we dont want to skip them yet
+					//TODO : Create another method to measure other role possibilities of the greater pr . Example Lux vs Senna. Lux has larger utility pr but likely to be mid in this case
+					if handleDuplicate(&liveGameParticipants, roles[n], prHolder[n], k) {
+						n = -1
+						continue
+					}
+				} else {
+					if len(liveGameParticipants[k].championRole.skipRole) < 1 {
+						bpr = prHolder[n]
+						liveGameParticipants[k].championRole.role = roles[n]
+						liveGameParticipants[k].championRole.BPH = bpr
+						mapKey = n
+					} else {
+						for m := 0; m < len(liveGameParticipants[k].championRole.skipRole); m++ {
+							if liveGameParticipants[k].championRole.skipRole[m] != roles[n] {
+								bpr = prHolder[n]
+								liveGameParticipants[k].championRole.role = roles[n]
+								liveGameParticipants[k].championRole.BPH = bpr
+								mapKey = n
+							}
+						}
+					}
+				}
+			}
+		}
+		if mapKey > -1 {
+			set[roles[mapKey]] = struct{}{} //Role was determined, add the role to the map to check for additional duplicates
+		}
+		prHolder = prHolder[:0]
+		bpr = 0
+	}
+	liveGameParticipants = giveRemainingRole(liveGameParticipants)
+	return liveGameParticipants
+}
+
+// TODO
+func checkSecondary(playRates []float32) {
+	// for k, x := 0, 0; k < len(playRates); k++ {
+	// 	if playRates[k] > 0 {
+
+	// 	}
+	// }
+}
+
+/// TODO
+func guessRole(championRole *[]ChampionRole) {
+	// for i := range *championRole {
+	// 	if (*championRole)[i].hasSmite {
+	// 		(*championRole)[i].Jungle.PlayRate += 5
+	// 	}
+	// }
+}
+
+///
+///
+/// If a champion is found with a higher role playrate, replace it with the existing one
+func handleDuplicate(liveGameParticipants *[]LiveGameParticipants, role string, prHolder float32, k int) bool {
+	for l := 0; l < len(*liveGameParticipants) && (*liveGameParticipants)[l].championRole.role != ""; l++ {
+		if (*liveGameParticipants)[l].championRole.role == role {
+			// a common mid/supp might be picked over an uncommon supp (xerath vs braum for eg)
+			if (*liveGameParticipants)[l].championRole.BPH < prHolder {
+				(*liveGameParticipants)[l].championRole.skipRole = append((*liveGameParticipants)[l].championRole.skipRole, role)
+				tmp := (*liveGameParticipants)[l].championRole
+				tmp.role = ""
+				tmp.BPH = 0
+				(*liveGameParticipants)[l].championRole = (*liveGameParticipants)[k].championRole
+				(*liveGameParticipants)[l].championRole.role = role
+				(*liveGameParticipants)[k].championRole = tmp
+			} else {
+				(*liveGameParticipants)[k].championRole.skipRole = append((*liveGameParticipants)[l].championRole.skipRole, role)
+				return true
+			}
+			return true
+		}
+	}
+	return false
+}
+
+///
+///
+/// Any champions that were not determined a role are given the leftover available roles
+func giveRemainingRole(liveGameParticipants []LiveGameParticipants) []LiveGameParticipants {
+	roles := []string{"TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"}
+	ma := make(map[string]bool, len(liveGameParticipants))
+	for _, ka := range liveGameParticipants {
+		ma[ka.championRole.role] = true
+	}
+	for _, kb := range roles {
+		if !ma[kb] { //give remaining unique role to champion
+			for l := 0; l < len(liveGameParticipants); l++ {
+				if liveGameParticipants[l].championRole.role == "" {
+					liveGameParticipants[l].championRole.role = kb
+					ma[kb] = true
+					break
+				}
 			}
 		}
 	}
-
-	embed.Fields = []*discordgo.MessageEmbedField{
-		{
-			Name:   "\u200b",
-			Value:  "\u200b",
-			Inline: false,
-		},
-		{
-			Name:  "Past 10 games stats: \t\t",
-			Value: KDA,
-		},
-		{
-			Name:   "Primary Role:",
-			Value:  "```" + playerMatchStats.Role.PreferredRole1 + KDA1 + "```",
-			Inline: true,
-		},
-		{
-			Name:   "Secondary Role:",
-			Value:  "```" + playerMatchStats.Role.PreferredRole2 + KDA2 + "```",
-			Inline: true,
-		},
-		{
-			Name:  "\u200b",
-			Value: "Top 3 Recent Champions",
-		},
-		{
-			Name:   champData[3],
-			Value:  "```" + champData[0] + "```",
-			Inline: true,
-		},
-		{
-			Name:   champData[4],
-			Value:  "```" + champData[1] + "```",
-			Inline: true,
-		},
-		{
-			Name:   champData[5],
-			Value:  "```" + champData[2] + "```",
-			Inline: true,
-		},
-	}
-	embed.Image = &discordgo.MessageEmbedImage{
-		URL: "attachment://output.png",
-	}
-	return embed
+	return liveGameParticipants
 }
 
-///
-///
-///
-func formatRankedEmbed(playerName string, fileName string, description string, colour int, times time.Time) *discordgo.MessageEmbed {
-	embed := &discordgo.MessageEmbed{
-		Color:       colour,
-		Title:       playerName,
-		Description: description,
-		Thumbnail: &discordgo.MessageEmbedThumbnail{
-			URL: "attachment://" + fileName,
-		},
-		Timestamp: times.Format(time.RFC3339),
+func getCurrentRoles(champPlayRates *map[string]ChampionRole, liveGameParticipants []LiveGameParticipants) []LiveGameParticipants {
+	for k, v := range *champPlayRates {
+		for n := 0; n < len(liveGameParticipants); n++ {
+			if strconv.Itoa(liveGameParticipants[n].ChampionId) == k {
+				liveGameParticipants[n].championRole = v
+			}
+		}
 	}
-	return embed
-}
-
-///
-///
-///
-func formatEmbedAuthor(embed *discordgo.MessageEmbed, playerInfo Summoner) *discordgo.MessageEmbed {
-	embed.Author = &discordgo.MessageEmbedAuthor{
-		Name:    playerInfo.Name,
-		IconURL: "http://ddragon.leagueoflegends.com/cdn/12.2.1/img/profileicon/" + strconv.Itoa(playerInfo.ProfileIconId) + ".png",
-		URL:     "https://na.op.gg/summoner/userName=" + strings.ReplaceAll(playerInfo.Name, " ", "%20"),
-	}
-	return embed
+	return liveGameParticipants
 }
 
 ///
 ///
 ///
 func getChampionFile(filename string) (err error) {
-	URL := "http://ddragon.leagueoflegends.com/cdn/12.2.1/img/champion/"
 	if _, err := os.Stat("./championImages/" + filename); errors.Is(err, os.ErrNotExist) {
-		errs := downloadFile(URL+filename, filename) //champion icons are only downloaded if they don't exist in the "championImages" directory
+		errs := downloadFile(filename) //champion icons are only downloaded if they don't exist in the "championImages" directory
 		return errs
 	}
 	return err

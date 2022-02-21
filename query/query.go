@@ -71,7 +71,11 @@ type LiveGameParticipants struct {
 	ChampionId   int
 	SummonerName string
 	SummonerId   string
+	Role         string
+	Spell1Id     int
+	Spell2Id     int
 	TeamId       int
+	championRole ChampionRole
 }
 
 type Status struct {
@@ -128,12 +132,13 @@ type Champion struct {
 }
 
 type ChampionRole struct {
-	ID   int
-	Pos  string
-	Sum1 int
-	Sum2 int
-	PH   float32
-	Top  struct {
+	ID       int
+	role     string
+	Sum1     int
+	Sum2     int
+	BPH      float32
+	skipRole []string
+	Top      struct {
 		PlayRate float32
 	} `json:"TOP"`
 	Jungle struct {
@@ -285,9 +290,10 @@ func getAccountInfo(playerName string) Summoner {
 
 }
 
-func downloadFile(URL, fileName string) error {
+func downloadFile(fileName string) error {
 	//Get the response bytes from the url
-	response, err := http.Get(URL)
+	URL := "http://ddragon.leagueoflegends.com/cdn/12.4.1/img/champion/"
+	response, err := http.Get(URL + fileName)
 	if err != nil {
 		log.Println("Unable to download file. Error: " + err.Error())
 		return err
