@@ -13,6 +13,11 @@ func live(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 	if validateName(args) {
 		s.ChannelTyping(m.ChannelID)
 		log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + config.BotPrefix + "live " + args[1])
+		if onCoolDown(m.Author.ID, 3) > 0 {
+			s.ChannelMessageSend(m.ChannelID, "You're currently on cooldown. Please wait a few seconds.")
+			log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " on cooldown")
+			return
+		}
 		send, err := query.IsInGame(args[1])
 		if err != nil {
 			log.Println("Discord server ID: " + m.GuildID + "  " + err.Error())
