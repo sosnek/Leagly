@@ -6,6 +6,7 @@ import (
 	"image"
 	"image/draw"
 	"image/jpeg"
+	"log"
 	"os"
 	"regexp"
 	"strconv"
@@ -278,7 +279,6 @@ func determineRoleByChampionPR(liveGameParticipants []LiveGameParticipants) []Li
 	roles := []string{"TOP", "JUNGLE", "MIDDLE", "BOTTOM", "UTILITY"}
 	var bpr float32 //bestplayrate
 	var prHolder []float32
-	//var tmp []ChampionRole
 	set := make(map[string]struct{})
 	mapKey := -1
 	//start with a loop that iterates through each champion in the game
@@ -288,6 +288,9 @@ func determineRoleByChampionPR(liveGameParticipants []LiveGameParticipants) []Li
 		prHolder = append(prHolder, liveGameParticipants[k].championRole.Top.PlayRate, liveGameParticipants[k].championRole.Jungle.PlayRate, liveGameParticipants[k].championRole.Middle.PlayRate, liveGameParticipants[k].championRole.Bottom.PlayRate, liveGameParticipants[k].championRole.Utility.PlayRate)
 		for n := 0; n < len(prHolder); n++ {
 			for m := 0; m < len(liveGameParticipants[k].championRole.skipRole); m++ {
+				if len(liveGameParticipants[k].championRole.skipRole) > 4 {
+					log.Println("Sanity check failed!")
+				}
 				if liveGameParticipants[k].championRole.skipRole[m] == roles[n] {
 					n++
 					break
@@ -367,7 +370,7 @@ func handleDuplicate(liveGameParticipants *[]LiveGameParticipants, role string, 
 				(*liveGameParticipants)[l].championRole.role = role
 				(*liveGameParticipants)[k].championRole = tmp
 			} else {
-				(*liveGameParticipants)[k].championRole.skipRole = append((*liveGameParticipants)[l].championRole.skipRole, role)
+				(*liveGameParticipants)[k].championRole.skipRole = append((*liveGameParticipants)[k].championRole.skipRole, role)
 				return true
 			}
 			return true
