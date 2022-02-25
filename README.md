@@ -4,6 +4,7 @@ Leagly is a discord bot aimed at providing you with quick, easy to read and up-t
 League of Legends is a multiplayer online battle arena (MOBA) game in which the player controls a "champion" with a set of unique abilities from an isometric perspective.
 
 example usage : 
+
 ![alt text](https://imgur.com/PLCuGRj.png "lastmatch")
 
 
