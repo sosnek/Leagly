@@ -96,8 +96,12 @@ func formatMasteriesEmbedFields(embed *discordgo.MessageEmbed, mastery Mastery) 
 ///
 ///
 ///
-func formatLiveMatchEmbedFields(embed *discordgo.MessageEmbed, rankedPlayers []*RankedInfo, liveGameInfo LiveGameInfo, participant LiveGameParticipants) *discordgo.MessageEmbed {
+func formatLiveMatchEmbedFields(embed *discordgo.MessageEmbed, rankedPlayers []*RankedInfo, liveGameInfo LiveGameInfo, participant LiveGameParticipants, bannedChampions string) *discordgo.MessageEmbed {
 	embed.Fields = []*discordgo.MessageEmbedField{
+		{
+			Name:  "Bans",
+			Value: bannedChampions,
+		},
 		{
 			Name:   "\u200b",
 			Value:  "\u200b",
@@ -131,12 +135,12 @@ func formatLiveMatchEmbedFields(embed *discordgo.MessageEmbed, rankedPlayers []*
 			},
 			{
 				Name:   "> __<:" + GetChampion(strconv.Itoa(liveGameInfo.Participants[k].ChampionId)) + ":" + GetEmoji(GetChampion(strconv.Itoa(liveGameInfo.Participants[k].ChampionId))) + ">" + rankedPlayers[k].SummonerName + "__",
-				Value:  fmt.Sprintf("> <:%s:%s>**%s**   WR: %d%%", rankedPlayers[k].Tier, GetEmoji(rankedPlayers[k].Tier), rankedPlayers[k].Rank, (rankedPlayers[k].Wins*100)/(rankedPlayers[k].Wins+rankedPlayers[k].Losses)),
+				Value:  fmt.Sprintf("> <:%s:%s>**%s**   WR: %d%% (%dG)", rankedPlayers[k].Tier, GetEmoji(rankedPlayers[k].Tier), rankedPlayers[k].Rank, (rankedPlayers[k].Wins*100)/(rankedPlayers[k].Wins+rankedPlayers[k].Losses), rankedPlayers[k].Wins+rankedPlayers[k].Losses),
 				Inline: true,
 			},
 			{
 				Name:   "> __**<:" + GetChampion(strconv.Itoa(liveGameInfo.Participants[k+5].ChampionId)) + ":" + GetEmoji(GetChampion(strconv.Itoa(liveGameInfo.Participants[k+5].ChampionId))) + ">" + rankedPlayers[k+5].SummonerName + "**__",
-				Value:  fmt.Sprintf("> <:%s:%s>**%s**   WR: %d%%", rankedPlayers[k+5].Tier, GetEmoji(rankedPlayers[k+5].Tier), rankedPlayers[k+5].Rank, (rankedPlayers[k+5].Wins*100)/(rankedPlayers[k+5].Wins+rankedPlayers[k+5].Losses)),
+				Value:  fmt.Sprintf("> <:%s:%s>**%s**   WR: %d%% (%dG)", rankedPlayers[k+5].Tier, GetEmoji(rankedPlayers[k+5].Tier), rankedPlayers[k+5].Rank, (rankedPlayers[k+5].Wins*100)/(rankedPlayers[k+5].Wins+rankedPlayers[k+5].Losses), rankedPlayers[k+5].Wins+rankedPlayers[k+5].Losses),
 				Inline: true,
 			},
 		}
@@ -173,12 +177,12 @@ func formatLastMatchEmbedFields(embed *discordgo.MessageEmbed, matchResults Matc
 		},
 		{
 			Name:   "\u200b",
-			Value:  "Blue Team",
+			Value:  fmt.Sprintf("<:%s:%s>", "blue_team", GetEmoji("blue_team")) + "Blue Team",
 			Inline: true,
 		},
 		{
 			Name:   "\u200b",
-			Value:  "Red Team",
+			Value:  fmt.Sprintf("<:%s:%s>", "red_team", GetEmoji("red_team")) + "Red Team",
 			Inline: true,
 		},
 	}

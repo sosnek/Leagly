@@ -62,7 +62,7 @@ func IsInGame(playerName string) (send *discordgo.MessageSend, err error) {
 			participant := parseLiveParticipant(accInfo.Id, liveGameInfo)
 			rankPlayers := formatRankedPlayers(liveGameInfo)
 			//get bans as well
-			//bannedChampions := getBannedChampsID(liveGameInfo)
+			bannedChampions := getBannedChampsID(liveGameInfo.BannedChampions)
 			champion := GetChampion(strconv.Itoa(participant.ChampionId))
 			err = getChampionFile(champion + ".png")
 			if err != nil {
@@ -72,7 +72,7 @@ func IsInGame(playerName string) (send *discordgo.MessageSend, err error) {
 			embed := formatRankedEmbed(playerName+" Is currently in a "+getMatchType(liveGameInfo.GameQueueConfigId), champion+".png", "Playing as "+champion+". Time: "+Gametime, 71, time.Now())
 			embed = formatEmbedAuthor(embed, accInfo)
 			files := formatEmbedImages([]string{}, "./championImages/", champion+".png")
-			embed = formatLiveMatchEmbedFields(embed, rankPlayers, liveGameInfo, participant)
+			embed = formatLiveMatchEmbedFields(embed, rankPlayers, liveGameInfo, participant, bannedChampions)
 			send = createMessageSend(embed, files)
 			return send, nil
 		}
@@ -119,7 +119,6 @@ func GetLastMatch(playerName string) (send *discordgo.MessageSend, err error) {
 		return send, nil
 	}
 	return send, errors.New("Sorry something went wrong getting lastmatch info for " + playerName)
-
 }
 
 //!lookup player
@@ -293,7 +292,7 @@ func determineRoleByChampionPR(liveGameParticipants []LiveGameParticipants) []Li
 				}
 				if liveGameParticipants[k].championRole.skipRole[m] == roles[n] {
 					n++
-					break
+					continue
 				}
 			}
 			if n >= len(prHolder) {
@@ -422,6 +421,37 @@ func getChampionFile(filename string) (err error) {
 		return errs
 	}
 	return err
+}
+
+///
+///
+///
+func getBannedChampsID(bannedChampions []BannedChampions) string {
+	if len(bannedChampions) < 1 {
+		return ""
+	}
+	res := fmt.Sprintf("<:%s:%s>", "blue_team", GetEmoji("blue_team"))
+	for i := 0; i < len(bannedChampions); i++ {
+		if bannedChampions[i].TeamID == 100 {
+			res = res + loopBannedChamps(bannedChampions[i].ChampionID)
+		}
+	}
+	res += fmt.Sprintf("<:%s:%s>", "blue_team", GetEmoji("blue_team")) + " " + fmt.Sprintf("<:%s:%s>", "blue_team", GetEmoji("red_team"))
+	for i := 0; i < len(bannedChampions); i++ {
+		if bannedChampions[i].TeamID == 200 {
+			res = res + loopBannedChamps(bannedChampions[i].ChampionID)
+		}
+	}
+	res += fmt.Sprintf("<:%s:%s>", "blue_team", GetEmoji("red_team"))
+	return res
+}
+
+func loopBannedChamps(champID int) string {
+	if champID == -1 {
+		return fmt.Sprintf("<:%s:%s>", "unknownChamp", GetEmoji("unknownChamp"))
+	} else {
+		return fmt.Sprintf("<:%s:%s>", GetChampion(strconv.Itoa(champID)), GetEmoji(GetChampion(strconv.Itoa(champID))))
+	}
 }
 
 ///

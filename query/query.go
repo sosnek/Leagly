@@ -64,6 +64,7 @@ type LiveGameInfo *struct {
 	MapId             int
 	GameQueueConfigId int
 	Participants      []LiveGameParticipants
+	BannedChampions   []BannedChampions
 	Status            Status
 }
 
@@ -153,6 +154,12 @@ type ChampionRole struct {
 	Utility struct {
 		PlayRate float32
 	} `json:"UTILITY"`
+}
+
+type BannedChampions struct {
+	ChampionID int `json:"championId"`
+	TeamID     int `json:"teamId"`
+	PickTurn   int `json:"pickTurn"`
 }
 
 ///
