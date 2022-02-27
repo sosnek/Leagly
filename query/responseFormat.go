@@ -35,7 +35,7 @@ const NUM_OF_RANK_GAMES = 10
 func Help() *discordgo.MessageSend {
 	embed := formatRankedEmbed("", "a", "Here is a list of the available commands for Leagly bot:", 16777215, time.Now())
 	embed.Author = &discordgo.MessageEmbedAuthor{
-		Name:    "Leagly Bot",
+		Name:    "Leagly Bot. [NA only]",
 		IconURL: "http://ddragon.leagueoflegends.com/cdn/12.4.1/img/profileicon/1630.png",
 		URL:     "https://discord.com/oauth2/authorize?client_id=930924283599925260&permissions=1074056192&scope=bot",
 	}
