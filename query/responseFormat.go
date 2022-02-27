@@ -428,7 +428,7 @@ func getChampionFile(filename string) (err error) {
 ///
 func getBannedChampsID(bannedChampions []BannedChampions) string {
 	if len(bannedChampions) < 1 {
-		return ""
+		return "\u200b"
 	}
 	res := fmt.Sprintf("<:%s:%s>", "blue_team", GetEmoji("blue_team"))
 	for i := 0; i < len(bannedChampions); i++ {
