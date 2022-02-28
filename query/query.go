@@ -164,10 +164,9 @@ type BannedChampions struct {
 
 ///
 ///
-///
-
-func getMasteryData(accID string) Mastery {
-	resp, err := http.Get("https://na1.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-summoner/" + accID + "?api_key=" + config.ApiKey)
+///https://na1.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-summoner/
+func getMasteryData(accID string, regionPrefix string) Mastery {
+	resp, err := http.Get("https://" + regionPrefix + ".api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-summoner/" + accID + "?api_key=" + config.ApiKey)
 	var mastery Mastery
 	if err != nil {
 		log.Println("Unable to get mastery info. Error: " + err.Error())
@@ -186,8 +185,9 @@ func getMasteryData(accID string) Mastery {
 	return mastery
 }
 
-func getRankedInfo(accID string) []*RankedInfo {
-	resp, err := http.Get("https://na1.api.riotgames.com/lol/league/v4/entries/by-summoner/" + accID + "?api_key=" + config.ApiKey)
+///https://na1.api.riotgames.com/lol/league/v4/entries/by-summoner/
+func getRankedInfo(accID string, regionPrefix string) []*RankedInfo {
+	resp, err := http.Get("https://" + regionPrefix + ".api.riotgames.com/lol/league/v4/entries/by-summoner/" + accID + "?api_key=" + config.ApiKey)
 	var rankedInfo []*RankedInfo
 	if err != nil {
 		log.Println("Unable to get ranked info. Error: " + err.Error())
@@ -206,8 +206,9 @@ func getRankedInfo(accID string) []*RankedInfo {
 	return rankedInfo
 }
 
-func getLiveGame(summID string) LiveGameInfo {
-	resp, err := http.Get("https://na1.api.riotgames.com/lol/spectator/v4/active-games/by-summoner/" + summID + "?api_key=" + config.ApiKey)
+///https://na1.api.riotgames.com/lol/spectator/v4/active-games/by-summoner/
+func getLiveGame(summID string, regionPrefix string) LiveGameInfo {
+	resp, err := http.Get("https://" + regionPrefix + ".api.riotgames.com/lol/spectator/v4/active-games/by-summoner/" + summID + "?api_key=" + config.ApiKey)
 	var liveGameInfo LiveGameInfo
 	if err != nil {
 		log.Println("Unable to get live game info. Error: " + err.Error())
@@ -230,8 +231,9 @@ func getLiveGame(summID string) LiveGameInfo {
 	return liveGameInfo
 }
 
-func getMatch(matchid string) MatchResults {
-	resp, err := http.Get("https://americas.api.riotgames.com/lol/match/v5/matches/" + matchid + "?api_key=" + config.ApiKey)
+///https://americas.api.riotgames.com/lol/match/v5/matches/
+func getMatch(matchid string, regionPrefix string) MatchResults {
+	resp, err := http.Get("https://" + regionPrefix + ".api.riotgames.com/lol/match/v5/matches/" + matchid + "?api_key=" + config.ApiKey)
 	var matchresults MatchResults
 	if err != nil {
 		log.Println("Unable to get match info. Error: " + err.Error())
@@ -253,8 +255,9 @@ func getMatch(matchid string) MatchResults {
 	return matchresults
 }
 
-func getMatchID(puuid string, count int) ([]string, error) {
-	resp, err := http.Get("https://americas.api.riotgames.com/lol/match/v5/matches/by-puuid/" + puuid + "/ids?start=0&count=" + (strconv.Itoa(count)) + "&api_key=" + config.ApiKey)
+///https://americas.api.riotgames.com/lol/match/v5/matches/by-puuid/
+func getMatchID(puuid string, count int, regionPrefix string) ([]string, error) {
+	resp, err := http.Get("https://" + regionPrefix + ".api.riotgames.com/lol/match/v5/matches/by-puuid/" + puuid + "/ids?start=0&count=" + (strconv.Itoa(count)) + "&api_key=" + config.ApiKey)
 	var arr []string
 	if err != nil {
 		log.Println("Unable to get matchID data. Error: " + err.Error())
@@ -275,8 +278,9 @@ func getMatchID(puuid string, count int) ([]string, error) {
 	return arr, err
 }
 
-func getAccountInfo(playerName string) Summoner {
-	resp, err := http.Get("https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/" + playerName + "?api_key=" + config.ApiKey)
+///https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/
+func getAccountInfo(playerName string, regionPrefix string) Summoner {
+	resp, err := http.Get("https://" + regionPrefix + ".api.riotgames.com/lol/summoner/v4/summoners/by-name/" + playerName + "?api_key=" + config.ApiKey)
 	var sum Summoner
 	if err != nil {
 		log.Println("Unable to get account info. Error: " + err.Error())

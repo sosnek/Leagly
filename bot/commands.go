@@ -2,8 +2,11 @@ package bot
 
 import (
 	"Leagly/config"
+	"Leagly/guilds"
 	"Leagly/query"
+	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
@@ -18,7 +21,7 @@ func live(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 			log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " on cooldown")
 			return
 		}
-		send, err := query.IsInGame(args[1])
+		send, err := query.IsInGame(args[len(args)-1], guilds.GetGuildPrefix(m.GuildID))
 		if err != nil {
 			log.Println("Discord server ID: " + m.GuildID + "  " + err.Error())
 			s.ChannelMessageSend(m.ChannelID, err.Error())
@@ -34,7 +37,7 @@ func lastmatch(s *discordgo.Session, m *discordgo.MessageCreate, args []string) 
 	if validateName(args) {
 		s.ChannelTyping(m.ChannelID)
 		log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + config.BotPrefix + "lastmatch " + args[1])
-		send, err := query.GetLastMatch(args[1])
+		send, err := query.GetLastMatch(args[len(args)-1], guilds.GetGuildPrefix(m.GuildID), guilds.GetGuildPrefix2(m.GuildID))
 		if err != nil {
 			log.Println("Discord server ID: " + m.GuildID + "  " + err.Error())
 			s.ChannelMessageSend(m.ChannelID, err.Error())
@@ -55,7 +58,7 @@ func lookup(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 			log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " on cooldown")
 			return
 		}
-		send, err := query.LookupPlayer(args[1])
+		send, err := query.LookupPlayer(args[len(args)-1], guilds.GetGuildPrefix(m.GuildID), guilds.GetGuildPrefix2(m.GuildID))
 		if err != nil {
 			log.Println("Discord server ID: " + m.GuildID + "  " + err.Error())
 			s.ChannelMessageSend(m.ChannelID, err.Error())
@@ -76,7 +79,7 @@ func mastery(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 			log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " on cooldown")
 			return
 		}
-		send, err := query.MasteryPlayer(args[1])
+		send, err := query.MasteryPlayer(args[len(args)-1], guilds.GetGuildPrefix(m.GuildID))
 		if err != nil {
 			log.Println(err)
 			s.ChannelMessageSend(m.ChannelID, err.Error())
@@ -92,7 +95,33 @@ func handleHelp(s *discordgo.Session, m *discordgo.MessageCreate) {
 	s.ChannelTyping(m.ChannelID)
 	log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + config.BotPrefix + "help")
 
-	s.ChannelMessageSendComplex(m.ChannelID, query.Help())
+	s.ChannelMessageSendComplex(m.ChannelID, query.Help(guilds.GetGuildPrefix(m.GuildID)))
+}
+
+func changePrefix(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
+	if validateName(args) {
+		if isValidRegion(args[len(args)-1]) {
+			for _, v := range guilds.DiscordGuilds {
+				if v.ID == m.GuildID {
+					v.Prefix = strings.ToUpper(args[len(args)-1])
+					if v.Prefix == "BR1" || v.Prefix == "NA1" || v.Prefix == "LA1" || v.Prefix == "LA2" {
+						v.Prefix2 = "americas"
+					} else if v.Prefix == "JP1" || v.Prefix == "OCE" || v.Prefix == "KR" {
+						v.Prefix2 = "asia"
+					} else {
+						v.Prefix2 = "europe"
+					}
+					s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Prefix has been changed to %s for your discord", v.Prefix))
+				}
+			}
+		} else {
+			s.ChannelMessageSend(m.ChannelID,
+				"Invalid region provided. Valid regions are : BR1, EUN1, EUW1, JP1, KR, LA1, LA2, NA1, OC1, RU, TR1")
+		}
+	} else {
+		s.ChannelMessageSend(m.ChannelID, "Please follow the command format!")
+		handleHelp(s, m)
+	}
 }
 
 func onCoolDown(user string, cd float64) float64 {
@@ -110,6 +139,16 @@ func onCoolDown(user string, cd float64) float64 {
 	}
 	discordUser = append(discordUser, &DiscordUser{ID: user, timestamp: time.Now()})
 	return 0
+}
+
+func isValidRegion(region string) bool {
+	regions := [11]string{"BR1", "EUN1", "EUW1", "JP1", "KR", "LA1", "LA2", "NA1", "OC1", "RU", "TR1"}
+	for i := 0; i < len(regions); i++ {
+		if regions[i] == strings.ToUpper(region) {
+			return true
+		}
+	}
+	return false
 }
 
 ///Some summoner names can have spaces in them

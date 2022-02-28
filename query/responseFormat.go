@@ -32,10 +32,10 @@ const NUM_OF_RANK_GAMES = 10
 ///
 ///
 ///
-func Help() *discordgo.MessageSend {
+func Help(discordRegion string) *discordgo.MessageSend {
 	embed := formatRankedEmbed("", "a", "Here is a list of the available commands for Leagly bot:", 16777215, time.Now())
 	embed.Author = &discordgo.MessageEmbedAuthor{
-		Name:    "Leagly Bot. [NA only]",
+		Name:    fmt.Sprintf("Leagly Bot. [%s]", discordRegion),
 		IconURL: "http://ddragon.leagueoflegends.com/cdn/12.4.1/img/profileicon/1630.png",
 		URL:     "https://discord.com/oauth2/authorize?client_id=930924283599925260&permissions=1074056192&scope=bot",
 	}
@@ -44,11 +44,11 @@ func Help() *discordgo.MessageSend {
 }
 
 //!live player
-func IsInGame(playerName string) (send *discordgo.MessageSend, err error) {
-	accInfo := getAccountInfo(playerName)
+func IsInGame(playerName string, region string) (send *discordgo.MessageSend, err error) {
+	accInfo := getAccountInfo(playerName, region)
 	send = &discordgo.MessageSend{}
 	if accInfo != nil {
-		liveGameInfo := getLiveGame(accInfo.Id)
+		liveGameInfo := getLiveGame(accInfo.Id, region)
 		if liveGameInfo == nil {
 			return send, errors.New("sorry, something went wrong")
 		}
@@ -60,7 +60,7 @@ func IsInGame(playerName string) (send *discordgo.MessageSend, err error) {
 			Gametime := fmt.Sprintf("%02d:%02d", (int(elapsed.Seconds()) / 60), (int(elapsed.Seconds()) % 60))
 
 			participant := parseLiveParticipant(accInfo.Id, liveGameInfo)
-			rankPlayers := formatRankedPlayers(liveGameInfo)
+			rankPlayers := formatRankedPlayers(liveGameInfo, region)
 			//get bans as well
 			bannedChampions := getBannedChampsID(liveGameInfo.BannedChampions)
 			champion := GetChampion(strconv.Itoa(participant.ChampionId))
@@ -90,18 +90,18 @@ func IsInGame(playerName string) (send *discordgo.MessageSend, err error) {
 }
 
 //!lastmatch player
-func GetLastMatch(playerName string) (send *discordgo.MessageSend, err error) {
-	accInfo := getAccountInfo(playerName)
+func GetLastMatch(playerName string, region string, region2 string) (send *discordgo.MessageSend, err error) {
+	accInfo := getAccountInfo(playerName, region)
 	send = &discordgo.MessageSend{}
 	if accInfo != nil {
-		matchID, err := getMatchID(accInfo.Puuid, 1)
+		matchID, err := getMatchID(accInfo.Puuid, 1, region2)
 		if err != nil {
 			return send, errors.New("Error getting match results for " + playerName)
 		}
 		if len(matchID) < 1 {
 			return send, errors.New("No match history found for " + playerName)
 		}
-		matchresults := getMatch(matchID[0])
+		matchresults := getMatch(matchID[0], region2)
 		if matchresults == nil {
 			return send, errors.New("Error getting match results for " + playerName)
 		}
@@ -122,16 +122,16 @@ func GetLastMatch(playerName string) (send *discordgo.MessageSend, err error) {
 }
 
 //!lookup player
-func LookupPlayer(playerName string) (send *discordgo.MessageSend, err error) {
-	accInfo := getAccountInfo(playerName)
+func LookupPlayer(playerName string, region string, region2 string) (send *discordgo.MessageSend, err error) {
+	accInfo := getAccountInfo(playerName, region)
 	send = &discordgo.MessageSend{}
 	if accInfo != nil {
-		rankedInfo := getRankedInfo(accInfo.Id)
+		rankedInfo := getRankedInfo(accInfo.Id, region)
 		if rankedInfo == nil {
 			return send, errors.New("Error getting match results for " + playerName)
 		}
 		fileName := getRankedAsset(rankedInfo)
-		matchIDs, err := getMatchID(accInfo.Puuid, MATCH_LIMIT) // Request MATCH_LIMIT amount of match ID's to be later filtered out for ranked ones
+		matchIDs, err := getMatchID(accInfo.Puuid, MATCH_LIMIT, region2) // Request MATCH_LIMIT amount of match ID's to be later filtered out for ranked ones
 		if err != nil {
 			return send, errors.New("Error getting match results for " + playerName)
 		}
@@ -141,7 +141,7 @@ func LookupPlayer(playerName string) (send *discordgo.MessageSend, err error) {
 
 		var matchStatsSlice []MatchResults
 		for n, k := 0, 0; n < len(matchIDs) && k < NUM_OF_RANK_GAMES; n++ { // Get 10 games
-			newMatch := getMatch(matchIDs[n])
+			newMatch := getMatch(matchIDs[n], region2)
 			if newMatch == nil {
 				return send, errors.New("Error getting match results for " + playerName)
 			}
@@ -181,16 +181,16 @@ func LookupPlayer(playerName string) (send *discordgo.MessageSend, err error) {
 ///
 ///
 ///
-func MasteryPlayer(playerName string) (send *discordgo.MessageSend, err error) {
-	accInfo := getAccountInfo(playerName)
+func MasteryPlayer(playerName string, region string) (send *discordgo.MessageSend, err error) {
+	accInfo := getAccountInfo(playerName, region)
 	send = &discordgo.MessageSend{}
 	if accInfo != nil {
-		rankedInfo := getRankedInfo(accInfo.Id)
+		rankedInfo := getRankedInfo(accInfo.Id, region)
 		if rankedInfo == nil {
 			return send, errors.New("Error getting match results for " + playerName)
 		}
 		fileName := getRankedAsset(rankedInfo)
-		masteryStats := getMasteryData(accInfo.Id)
+		masteryStats := getMasteryData(accInfo.Id, region)
 		if masteryStats == nil {
 			return send, errors.New("Error getting masteries for " + playerName)
 		}
@@ -857,10 +857,10 @@ func mergeImages(imageName []string) string {
 ///
 ///
 ///
-func formatRankedPlayers(liveGameInfo LiveGameInfo) []*RankedInfo {
+func formatRankedPlayers(liveGameInfo LiveGameInfo, region string) []*RankedInfo {
 	var rankedPlayers []*RankedInfo
 	for i := 0; i < len(liveGameInfo.Participants); i++ {
-		rankHistory := getRankedInfo(liveGameInfo.Participants[i].SummonerId)
+		rankHistory := getRankedInfo(liveGameInfo.Participants[i].SummonerId, region)
 		for n := 0; n < len(rankHistory); n++ {
 			if rankHistory[n].QueueType == "RANKED_SOLO_5x5" {
 				rankedPlayers = append(rankedPlayers, rankHistory[n])

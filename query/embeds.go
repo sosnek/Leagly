@@ -58,6 +58,11 @@ func formatHelpEmbed(embed *discordgo.MessageEmbed) *discordgo.MessageEmbed {
 			Value:  "Shows mastery stats of player",
 			Inline: false,
 		},
+		{
+			Name:   config.BotPrefix + "region <region code>",
+			Value:  "Updates the region for your discord server",
+			Inline: false,
+		},
 	}
 	return embed
 }

@@ -2,6 +2,7 @@ package bot
 
 import (
 	"Leagly/config" //importing our config package which we have created above
+	"Leagly/guilds"
 	"Leagly/query"
 	"fmt" //to print errors
 	"log"
@@ -33,7 +34,9 @@ func ConnectToDiscord() {
 
 	leaglyBot.AddHandler(messageCreate)
 
-	leaglyBot.Identify.Intents = discordgo.IntentsGuildMessages
+	leaglyBot.AddHandler(guildCreate)
+
+	leaglyBot.Identify.Intents = discordgo.IntentsGuilds | discordgo.IntentsGuildMessages
 
 	err = leaglyBot.Open()
 	if err != nil {
@@ -75,6 +78,15 @@ func InitializeEmojis(s *discordgo.Session) {
 	query.InitEmojis(emojis)
 }
 
+func guildCreate(s *discordgo.Session, event *discordgo.GuildCreate) {
+	if event.Guild.Unavailable {
+		return
+	}
+	log.Println(event.Guild.Name)
+
+	guilds.DiscordGuilds = append(guilds.DiscordGuilds, &guilds.DiscordGuild{ID: event.ID, Prefix: "NA"})
+}
+
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	messageContent := m.Content
@@ -99,6 +111,12 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	// !help
 	if command == config.BotPrefix+"help" {
 		handleHelp(s, m)
+		return
+	}
+
+	// !prefix
+	if command == config.BotPrefix+"region" {
+		changePrefix(s, m, args)
 		return
 	}
 
