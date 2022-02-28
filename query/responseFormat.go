@@ -35,7 +35,7 @@ const NUM_OF_RANK_GAMES = 10
 func Help(discordRegion string) *discordgo.MessageSend {
 	embed := formatRankedEmbed("", "a", "Here is a list of the available commands for Leagly bot:", 16777215, time.Now())
 	embed.Author = &discordgo.MessageEmbedAuthor{
-		Name:    fmt.Sprintf("Leagly Bot. [%s]", discordRegion),
+		Name:    fmt.Sprintf("Leagly Bot. [%s] Region", discordRegion),
 		IconURL: "http://ddragon.leagueoflegends.com/cdn/12.4.1/img/profileicon/1630.png",
 		URL:     "https://discord.com/oauth2/authorize?client_id=930924283599925260&permissions=1074056192&scope=bot",
 	}
@@ -70,7 +70,7 @@ func IsInGame(playerName string, region string) (send *discordgo.MessageSend, er
 			}
 
 			embed := formatRankedEmbed(playerName+" Is currently in a "+getMatchType(liveGameInfo.GameQueueConfigId), champion+".png", "Playing as "+champion+". Time: "+Gametime, 71, time.Now())
-			embed = formatEmbedAuthor(embed, accInfo)
+			embed = formatEmbedAuthor(embed, accInfo, region)
 			files := formatEmbedImages([]string{}, "./championImages/", champion+".png")
 			embed = formatLiveMatchEmbedFields(embed, rankPlayers, liveGameInfo, participant, bannedChampions)
 			send = createMessageSend(embed, files)
@@ -82,7 +82,7 @@ func IsInGame(playerName string, region string) (send *discordgo.MessageSend, er
 			Description: "Not currently in-game",
 			Timestamp:   time.Now().Format(time.RFC3339),
 		}
-		embed = formatEmbedAuthor(embed, accInfo)
+		embed = formatEmbedAuthor(embed, accInfo, region)
 		send = createMessageSend(embed, []*discordgo.File{})
 		return send, nil
 	}
@@ -113,7 +113,7 @@ func GetLastMatch(playerName string, region string, region2 string) (send *disco
 		}
 		embed := formatRankedEmbed(getMatchType(matchresults.Info.QueueId)+". Time: "+fmt.Sprintf("%02d:%02d", int(matchresults.Info.GameDuration/60), int(matchresults.Info.GameDuration%60)), fileName, formatItems(participant), getEmbedColour(participant.Win), time.Unix(int64((matchresults.Info.GameCreation)/1000) + +int64(matchresults.Info.GameDuration), 0).Local())
 		files := formatEmbedImages([]string{}, "./championImages/", fileName)
-		embed = formatEmbedAuthor(embed, accInfo)
+		embed = formatEmbedAuthor(embed, accInfo, region)
 		embed = formatLastMatchEmbedFields(embed, matchresults, accInfo.Puuid)
 		send = createMessageSend(embed, files)
 		return send, nil
@@ -153,7 +153,7 @@ func LookupPlayer(playerName string, region string, region2 string) (send *disco
 
 		description := formatPlayerRankedStats(rankedInfo)
 		embed := formatRankedEmbed(playerName, fileName, description, 000127255, time.Now())
-		embed = formatEmbedAuthor(embed, accInfo)
+		embed = formatEmbedAuthor(embed, accInfo, region)
 
 		if matchStatsSlice == nil {
 			//Player has a rank, but no ranked matches within the last 30 games
@@ -195,7 +195,7 @@ func MasteryPlayer(playerName string, region string) (send *discordgo.MessageSen
 			return send, errors.New("Error getting masteries for " + playerName)
 		}
 		embed := formatRankedEmbed("Champion Masteries", fileName, "", 16747032, time.Now())
-		embed = formatEmbedAuthor(embed, accInfo)
+		embed = formatEmbedAuthor(embed, accInfo, region)
 		files := formatEmbedImages([]string{}, "./assets/", fileName)
 		embed = formatMasteriesEmbedFields(embed, masteryStats)
 		send = createMessageSend(embed, files)

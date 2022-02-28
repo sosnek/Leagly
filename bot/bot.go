@@ -82,9 +82,9 @@ func guildCreate(s *discordgo.Session, event *discordgo.GuildCreate) {
 	if event.Guild.Unavailable {
 		return
 	}
-	log.Println(event.Guild.Name)
+	log.Println("Added guild ID:" + event.Guild.ID + ". Name: " + event.Guild.Name)
 
-	guilds.DiscordGuilds = append(guilds.DiscordGuilds, &guilds.DiscordGuild{ID: event.ID, Prefix: "NA"})
+	guilds.DiscordGuilds = append(guilds.DiscordGuilds, &guilds.DiscordGuild{ID: event.ID, Region: "NA1", Region2: "americas"})
 }
 
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -116,7 +116,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	// !prefix
 	if command == config.BotPrefix+"region" {
-		changePrefix(s, m, args)
+		changeRegion(s, m, args)
 		return
 	}
 
