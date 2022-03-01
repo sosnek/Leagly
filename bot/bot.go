@@ -83,8 +83,15 @@ func guildCreate(s *discordgo.Session, event *discordgo.GuildCreate) {
 		return
 	}
 	log.Println("Added guild ID:" + event.Guild.ID + ". Name: " + event.Guild.Name)
-
-	guilds.DiscordGuilds = append(guilds.DiscordGuilds, &guilds.DiscordGuild{ID: event.ID, Region: "NA1", Region2: "americas"})
+	var exists bool
+	for i := 0; i < len(guilds.DiscordGuilds); i++ {
+		if event.ID == guilds.DiscordGuilds[i].ID {
+			exists = true
+		}
+	}
+	if !exists {
+		guilds.DiscordGuilds = append(guilds.DiscordGuilds, &guilds.DiscordGuild{ID: event.ID, Region: "NA1", Region2: "americas"})
+	}
 }
 
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
