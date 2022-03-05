@@ -162,6 +162,10 @@ type BannedChampions struct {
 	PickTurn   int `json:"pickTurn"`
 }
 
+//Need to update this every major patch
+const CHAMP_DATA = "http://ddragon.leagueoflegends.com/cdn/12.4.1/data/en_US/champion.json"
+const CHAMPE_ICONS = "http://ddragon.leagueoflegends.com/cdn/12.4.1/img/champion/"
+
 ///
 ///
 ///https://na1.api.riotgames.com/lol/champion-mastery/v4/champion-masteries/by-summoner/
@@ -303,8 +307,7 @@ func getAccountInfo(playerName string, regionPrefix string) Summoner {
 
 func downloadFile(fileName string) error {
 	//Get the response bytes from the url
-	URL := "http://ddragon.leagueoflegends.com/cdn/12.4.1/img/champion/"
-	response, err := http.Get(URL + fileName)
+	response, err := http.Get(CHAMPE_ICONS + fileName)
 	if err != nil {
 		log.Println("Unable to download file. Error: " + err.Error())
 		return err
@@ -334,7 +337,7 @@ func downloadFile(fileName string) error {
 }
 
 func InitializedChampStruct() {
-	resp, err := http.Get("http://ddragon.leagueoflegends.com/cdn/12.4.1/data/en_US/champion.json")
+	resp, err := http.Get(CHAMP_DATA)
 
 	if err != nil {
 		log.Println("Unable to get champion struct data. Error: " + err.Error())

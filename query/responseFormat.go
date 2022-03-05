@@ -29,17 +29,19 @@ const ARAM = 450
 const MATCH_LIMIT = 30
 const NUM_OF_RANK_GAMES = 10
 
+const LEAGLY_SUMMONER_ICON = "http://ddragon.leagueoflegends.com/cdn/12.4.1/img/profileicon/1630.png"
+
 ///
 ///
 ///
-func Help(discordRegion string) *discordgo.MessageSend {
+func Help(discordRegion string, discorddPrefix string) *discordgo.MessageSend {
 	embed := formatRankedEmbed("", "a", "Here is a list of the available commands for Leagly bot:", 16777215, time.Now())
 	embed.Author = &discordgo.MessageEmbedAuthor{
 		Name:    fmt.Sprintf("Leagly Bot. [%s] Region", discordRegion),
-		IconURL: "http://ddragon.leagueoflegends.com/cdn/12.4.1/img/profileicon/1630.png",
+		IconURL: LEAGLY_SUMMONER_ICON,
 		URL:     "https://discord.com/oauth2/authorize?client_id=930924283599925260&permissions=1074056192&scope=bot",
 	}
-	embed = formatHelpEmbed(embed)
+	embed = formatHelpEmbed(embed, discorddPrefix)
 	return createMessageSend(embed, []*discordgo.File{})
 }
 

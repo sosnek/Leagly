@@ -1,7 +1,6 @@
 package query
 
 import (
-	"Leagly/config"
 	"fmt"
 	"strconv"
 	"strings"
@@ -31,36 +30,41 @@ func createMessageSend(embed *discordgo.MessageEmbed, files []*discordgo.File) *
 ///
 ///
 ///
-func formatHelpEmbed(embed *discordgo.MessageEmbed) *discordgo.MessageEmbed {
+func formatHelpEmbed(embed *discordgo.MessageEmbed, prefix string) *discordgo.MessageEmbed {
 	embed.Fields = []*discordgo.MessageEmbedField{
 		{
-			Name:   config.BotPrefix + "help",
+			Name:   prefix + "help",
 			Value:  "Shows all available commands",
 			Inline: false,
 		},
 		{
-			Name:   config.BotPrefix + "live <playername>",
+			Name:   prefix + "live <playername>",
 			Value:  "Checks to see if the player is in a game",
 			Inline: false,
 		},
 		{
-			Name:   config.BotPrefix + "lastmatch <playername>",
+			Name:   prefix + "lastmatch <playername>",
 			Value:  "Shows the players last match stats",
 			Inline: false,
 		},
 		{
-			Name:   config.BotPrefix + "lookup <playername>",
+			Name:   prefix + "lookup <playername>",
 			Value:  "Shows ranked history of player",
 			Inline: false,
 		},
 		{
-			Name:   config.BotPrefix + "mastery <playername>",
+			Name:   prefix + "mastery <playername>",
 			Value:  "Shows mastery stats of player",
 			Inline: false,
 		},
 		{
-			Name:   config.BotPrefix + "region <region code>",
+			Name:   prefix + "region <region code>",
 			Value:  "Updates the region for your discord server",
+			Inline: false,
+		},
+		{
+			Name:   prefix + "prefix <new prefix>",
+			Value:  "Changes the prefix leagly will follow. (Admin only)",
 			Inline: false,
 		},
 	}
@@ -114,12 +118,12 @@ func formatLiveMatchEmbedFields(embed *discordgo.MessageEmbed, rankedPlayers []*
 		},
 		{
 			Name:   "\u200b",
-			Value:  "Blue Team",
+			Value:  fmt.Sprintf("<:%s:%s>", "blue_team", GetEmoji("blue_team")) + "Blue Team",
 			Inline: true,
 		},
 		{
 			Name:   "\u200b",
-			Value:  "Red Team",
+			Value:  fmt.Sprintf("<:%s:%s>", "red_team", GetEmoji("red_team")) + "Red Team",
 			Inline: true,
 		},
 	}

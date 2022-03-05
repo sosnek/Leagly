@@ -10,6 +10,7 @@ type DiscordGuild struct {
 	ID      string
 	Region  string
 	Region2 string //americas, europe, asia
+	Prefix  string
 }
 
 func GetGuildRegion(guildID string) string {
@@ -30,4 +31,14 @@ func GetGuildRegion2(guildID string) string {
 	}
 	log.Println("Could not find discord server ID: " + guildID + ". Defaulting to NA region")
 	return "americas"
+}
+
+func GetGuildPrefix(guildID string) string {
+	for _, v := range DiscordGuilds {
+		if v.ID == guildID {
+			return v.Prefix
+		}
+	}
+	log.Println("Could not find discord server ID: " + guildID + ". Defaulting to >> prefix")
+	return ">>"
 }

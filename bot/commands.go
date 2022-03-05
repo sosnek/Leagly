@@ -1,7 +1,6 @@
 package bot
 
 import (
-	"Leagly/config"
 	"Leagly/guilds"
 	"Leagly/query"
 	"fmt"
@@ -15,7 +14,7 @@ import (
 func live(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 	if validateName(args) {
 		s.ChannelTyping(m.ChannelID)
-		log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + config.BotPrefix + "live " + args[1])
+		log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + guilds.GetGuildPrefix(m.GuildID) + "live " + args[1])
 		if onCoolDown(m.Author.ID, 3) > 0 {
 			s.ChannelMessageSend(m.ChannelID, "You're currently on cooldown. Please wait a few seconds.")
 			log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " on cooldown")
@@ -36,7 +35,7 @@ func live(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 func lastmatch(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 	if validateName(args) {
 		s.ChannelTyping(m.ChannelID)
-		log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + config.BotPrefix + "lastmatch " + args[1])
+		log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + guilds.GetGuildPrefix(m.GuildID) + "lastmatch " + args[1])
 		send, err := query.GetLastMatch(args[1], guilds.GetGuildRegion(m.GuildID), guilds.GetGuildRegion2(m.GuildID))
 		if err != nil {
 			log.Println("Discord server ID: " + m.GuildID + "  " + err.Error())
@@ -52,7 +51,7 @@ func lastmatch(s *discordgo.Session, m *discordgo.MessageCreate, args []string) 
 func lookup(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 	if validateName(args) {
 		s.ChannelTyping(m.ChannelID)
-		log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + config.BotPrefix + "lookup " + args[1])
+		log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + guilds.GetGuildPrefix(m.GuildID) + "lookup " + args[1])
 		if onCoolDown(m.Author.ID, 5) > 0 {
 			s.ChannelMessageSend(m.ChannelID, "You're currently on cooldown. Please wait a few seconds.")
 			log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " on cooldown")
@@ -73,7 +72,7 @@ func lookup(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 func mastery(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 	if validateName(args) {
 		s.ChannelTyping(m.ChannelID)
-		log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + config.BotPrefix + "mastery " + args[1])
+		log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + guilds.GetGuildPrefix(m.GuildID) + "mastery " + args[1])
 		if onCoolDown(m.Author.ID, 3) > 0 {
 			s.ChannelMessageSend(m.ChannelID, "You're currently on cooldown. Please wait a few seconds.")
 			log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " on cooldown")
@@ -93,16 +92,16 @@ func mastery(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 
 func handleHelp(s *discordgo.Session, m *discordgo.MessageCreate) {
 	s.ChannelTyping(m.ChannelID)
-	log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + config.BotPrefix + "help")
+	log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + guilds.GetGuildPrefix(m.GuildID) + "help")
 
-	s.ChannelMessageSendComplex(m.ChannelID, query.Help(guilds.GetGuildRegion(m.GuildID)))
+	s.ChannelMessageSendComplex(m.ChannelID, query.Help(guilds.GetGuildRegion(m.GuildID), guilds.GetGuildPrefix(m.GuildID)))
 }
 
 func changeRegion(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 	if validateName(args) {
 		if isValidRegion(args[1]) {
 			s.ChannelTyping(m.ChannelID)
-			log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + config.BotPrefix + "region " + args[1])
+			log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + guilds.GetGuildPrefix(m.GuildID) + "region " + args[1])
 			for _, v := range guilds.DiscordGuilds {
 				if v.ID == m.GuildID {
 					v.Region = strings.ToUpper(args[1])
@@ -120,6 +119,36 @@ func changeRegion(s *discordgo.Session, m *discordgo.MessageCreate, args []strin
 		} else {
 			s.ChannelMessageSend(m.ChannelID,
 				"Invalid region provided. Valid regions are : BR1, EUN1, EUW1, JP1, KR, LA1, LA2, NA1, OC1, RU, TR1")
+		}
+	} else {
+		s.ChannelMessageSend(m.ChannelID, "Please follow the command format!")
+		handleHelp(s, m)
+	}
+}
+
+func changePrefix(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
+	isAdmin, err := s.UserChannelPermissions(m.Author.ID, m.ChannelID)
+	if err != nil {
+		log.Println("Discord server ID: " + m.GuildID + " Error getting channel permissions")
+		return
+	}
+	if isAdmin&discordgo.PermissionAdministrator < 1 {
+		s.ChannelMessageSend(m.ChannelID, "This is an Admin only command")
+		log.Println("Discord server ID: " + m.GuildID + " User does not have channel admin controls. " + m.Author.Username)
+		return
+	}
+	if validateName(args) {
+		if len(args[1]) < 10 {
+			for _, v := range guilds.DiscordGuilds {
+				if v.ID == m.GuildID {
+					v.Prefix = args[1]
+					s.ChannelMessageSend(m.ChannelID, "Prefix has been changed to "+v.Prefix)
+					log.Println("Discord server ID: " + m.GuildID + "  Changed prefix to " + v.Prefix)
+
+				}
+			}
+		} else {
+			s.ChannelMessageSend(m.ChannelID, "Prefix must be under 10 characters.")
 		}
 	} else {
 		s.ChannelMessageSend(m.ChannelID, "Please follow the command format!")

@@ -90,7 +90,7 @@ func guildCreate(s *discordgo.Session, event *discordgo.GuildCreate) {
 		}
 	}
 	if !exists {
-		guilds.DiscordGuilds = append(guilds.DiscordGuilds, &guilds.DiscordGuild{ID: event.ID, Region: "NA1", Region2: "americas"})
+		guilds.DiscordGuilds = append(guilds.DiscordGuilds, &guilds.DiscordGuild{ID: event.ID, Region: "NA1", Region2: "americas", Prefix: ">>"})
 	}
 }
 
@@ -107,45 +107,56 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if len(args) < 1 {
 		return
 	}
+	prefix := strings.ToLower(guilds.GetGuildPrefix(m.GuildID))
 
-	runes := []rune(args[0])
-	if string(runes[0:2]) != config.BotPrefix {
-		return
-	}
+	// runes := []rune(args[0])
+	// if string(runes[0:2]) != prefix {
+	// 	return
+	// }
 
 	command := strings.ToLower(args[0])
-
 	// !help
-	if command == config.BotPrefix+"help" {
+	if command == prefix+"help" {
 		handleHelp(s, m)
 		return
 	}
 
 	// !prefix
-	if command == config.BotPrefix+"region" {
+	if command == prefix+"region" {
 		changeRegion(s, m, args)
 		return
 	}
 
 	// !live - checks if player is currently in a game
-	if command == config.BotPrefix+"live" {
+	if command == prefix+"live" {
 		live(s, m, args)
 		return
 	}
 
 	// !lastmatch - Searches and displays stats from last league game played
-	if command == config.BotPrefix+"lastmatch" {
+	if command == prefix+"lastmatch" {
 		lastmatch(s, m, args)
 		return
 	}
 
-	if command == config.BotPrefix+"lookup" {
+	if command == prefix+"lookup" {
 		lookup(s, m, args)
 		return
 	}
 
-	if command == config.BotPrefix+"mastery" {
+	if command == prefix+"mastery" {
 		mastery(s, m, args)
 		return
+	}
+
+	if command == prefix+"prefix" {
+		changePrefix(s, m, args)
+		return
+	}
+
+	for _, v := range m.Mentions {
+		if v.ID == s.State.User.ID {
+			handleHelp(s, m)
+		}
 	}
 }
