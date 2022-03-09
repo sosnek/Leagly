@@ -156,6 +156,12 @@ func changePrefix(s *discordgo.Session, m *discordgo.MessageCreate, args []strin
 	}
 }
 
+func uptime(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
+	if len(args) < 2 {
+
+	}
+}
+
 func onCoolDown(user string, cd float64) float64 {
 	for i := range discordUser {
 		if discordUser[i].ID == user {

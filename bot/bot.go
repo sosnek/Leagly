@@ -18,6 +18,7 @@ import (
 var BotId string
 var goBot *discordgo.Session
 var discordUser []*DiscordUser
+var up_time = time.Time{}
 
 type DiscordUser struct {
 	ID        string
@@ -45,6 +46,7 @@ func ConnectToDiscord() {
 	}
 	Initialize(leaglyBot)
 	fmt.Println("Leagly is now running")
+	up_time = time.Now()
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc
@@ -109,11 +111,6 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 	prefix := strings.ToLower(guilds.GetGuildPrefix(m.GuildID))
 
-	// runes := []rune(args[0])
-	// if string(runes[0:2]) != prefix {
-	// 	return
-	// }
-
 	command := strings.ToLower(args[0])
 	// !help
 	if command == prefix+"help" {
@@ -151,6 +148,11 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	if command == prefix+"prefix" {
 		changePrefix(s, m, args)
+		return
+	}
+
+	if command == prefix+"uptime" {
+		uptime(s, m, args)
 		return
 	}
 

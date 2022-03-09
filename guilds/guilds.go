@@ -5,6 +5,7 @@ import (
 )
 
 var DiscordGuilds []*DiscordGuild
+var MY_DISCORD_ID = "220732095083839488"
 
 type DiscordGuild struct {
 	ID      string
@@ -41,4 +42,8 @@ func GetGuildPrefix(guildID string) string {
 	}
 	log.Println("Could not find discord server ID: " + guildID + ". Defaulting to >> prefix")
 	return ">>"
+}
+
+func HasDebugPermissions(authID string) bool {
+	return authID == MY_DISCORD_ID
 }
