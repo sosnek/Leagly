@@ -32,7 +32,6 @@ func ConnectToDiscord() {
 		log.Println(err)
 		panic(err)
 	}
-
 	leaglyBot.AddHandler(messageCreate)
 
 	leaglyBot.AddHandler(guildCreate)
@@ -46,7 +45,6 @@ func ConnectToDiscord() {
 	}
 	Initialize(leaglyBot)
 	fmt.Println("Leagly is now running")
-	up_time = time.Now()
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc
@@ -60,6 +58,7 @@ func ConnectToDiscord() {
 func Initialize(s *discordgo.Session) {
 	query.InitializedChampStruct()
 	InitializeEmojis(s)
+	up_time = time.Now()
 }
 
 ///

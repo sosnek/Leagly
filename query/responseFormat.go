@@ -34,6 +34,24 @@ const LEAGLY_SUMMONER_ICON = "http://ddragon.leagueoflegends.com/cdn/12.4.1/img/
 ///
 ///
 ///
+func UpTime(start_time time.Time) *discordgo.MessageSend {
+	uptime := time.Since(start_time)
+	d := uptime.Round(time.Minute)
+	h := d / time.Hour
+	d -= h * time.Hour
+	m := d / time.Minute
+	embed := formatRankedEmbed("", "a", fmt.Sprintf("Leagly has been running for %02d:%02d", h, m), 16777215, time.Now())
+	embed.Author = &discordgo.MessageEmbedAuthor{
+		Name:    fmt.Sprintf("Leagly Bot Uptime"),
+		IconURL: LEAGLY_SUMMONER_ICON,
+		URL:     "https://discord.com/oauth2/authorize?client_id=930924283599925260&permissions=1074056192&scope=bot",
+	}
+	return createMessageSend(embed, []*discordgo.File{})
+}
+
+///
+///
+///
 func Help(discordRegion string, discorddPrefix string) *discordgo.MessageSend {
 	embed := formatRankedEmbed("", "a", "Here is a list of the available commands for Leagly bot:", 16777215, time.Now())
 	embed.Author = &discordgo.MessageEmbedAuthor{

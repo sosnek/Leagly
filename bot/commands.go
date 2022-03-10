@@ -158,7 +158,7 @@ func changePrefix(s *discordgo.Session, m *discordgo.MessageCreate, args []strin
 
 func uptime(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 	if len(args) < 2 {
-
+		s.ChannelMessageSendComplex(m.ChannelID, query.UpTime(up_time))
 	}
 }
 
