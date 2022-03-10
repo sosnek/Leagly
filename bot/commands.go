@@ -114,6 +114,7 @@ func changeRegion(s *discordgo.Session, m *discordgo.MessageCreate, args []strin
 					}
 					log.Println("Discord server ID: " + m.GuildID + "  Changed region to " + v.Region + " " + v.Region2)
 					s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Region has been changed to %s for your discord", v.Region))
+					break
 				}
 			}
 		} else {

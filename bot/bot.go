@@ -33,7 +33,6 @@ func ConnectToDiscord() {
 		panic(err)
 	}
 	leaglyBot.AddHandler(messageCreate)
-
 	leaglyBot.AddHandler(guildCreate)
 
 	leaglyBot.Identify.Intents = discordgo.IntentsGuilds | discordgo.IntentsGuildMessages
