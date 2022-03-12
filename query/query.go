@@ -135,8 +135,6 @@ type Champion struct {
 type ChampionRole struct {
 	ID       int
 	role     string
-	Sum1     int
-	Sum2     int
 	BPH      float32
 	skipRole []string
 	Top      struct {
@@ -354,7 +352,7 @@ func InitializedChampStruct() {
 
 	var objmap map[string]json.RawMessage
 	json.Unmarshal([]byte(sb), &objmap)
-	json.Unmarshal(objmap["data"], &champ3) //fuck you :)
+	json.Unmarshal(objmap["data"], &champ3)
 }
 
 // func ChampionPositions() *map[string]ChampionRole {

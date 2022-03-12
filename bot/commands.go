@@ -22,8 +22,9 @@ func live(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 		}
 		send, err := query.IsInGame(args[1], guilds.GetGuildRegion(m.GuildID))
 		if err != nil {
-			log.Println("Discord server ID: " + m.GuildID + "  " + err.Error())
+			log.Println("Error: Discord server ID: " + m.GuildID + "  " + err.Error())
 			s.ChannelMessageSend(m.ChannelID, err.Error())
+			return
 		}
 		s.ChannelMessageSendComplex(m.ChannelID, send)
 	} else {
@@ -38,8 +39,9 @@ func lastmatch(s *discordgo.Session, m *discordgo.MessageCreate, args []string) 
 		log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + guilds.GetGuildPrefix(m.GuildID) + "lastmatch " + args[1])
 		send, err := query.GetLastMatch(args[1], guilds.GetGuildRegion(m.GuildID), guilds.GetGuildRegion2(m.GuildID))
 		if err != nil {
-			log.Println("Discord server ID: " + m.GuildID + "  " + err.Error())
+			log.Println("Error: Discord server ID: " + m.GuildID + "  " + err.Error())
 			s.ChannelMessageSend(m.ChannelID, err.Error())
+			return
 		}
 		s.ChannelMessageSendComplex(m.ChannelID, send)
 	} else {
@@ -59,8 +61,9 @@ func lookup(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 		}
 		send, err := query.LookupPlayer(args[1], guilds.GetGuildRegion(m.GuildID), guilds.GetGuildRegion2(m.GuildID))
 		if err != nil {
-			log.Println("Discord server ID: " + m.GuildID + "  " + err.Error())
+			log.Println("Error: Discord server ID: " + m.GuildID + "  " + err.Error())
 			s.ChannelMessageSend(m.ChannelID, err.Error())
+			return
 		}
 		s.ChannelMessageSendComplex(m.ChannelID, send)
 	} else {
@@ -80,8 +83,9 @@ func mastery(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 		}
 		send, err := query.MasteryPlayer(args[1], guilds.GetGuildRegion(m.GuildID))
 		if err != nil {
-			log.Println(err)
+			log.Println("Error: Discord server ID: " + m.GuildID + "  " + err.Error())
 			s.ChannelMessageSend(m.ChannelID, err.Error())
+			return
 		}
 		s.ChannelMessageSendComplex(m.ChannelID, send)
 	} else {

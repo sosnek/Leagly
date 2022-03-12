@@ -25,6 +25,9 @@ const RANKED_SOLO = 420
 const RANKED_FLEX = 440
 const ARAM = 450
 
+//Sum spells
+const SMITE = 11
+
 //Lookup match limit maxium last 30 matches
 const MATCH_LIMIT = 30
 const NUM_OF_RANK_GAMES = 10
@@ -35,14 +38,9 @@ const LEAGLY_SUMMONER_ICON = "http://ddragon.leagueoflegends.com/cdn/12.4.1/img/
 ///
 ///
 func UpTime(start_time time.Time) *discordgo.MessageSend {
-	uptime := time.Since(start_time)
-	d := uptime.Round(time.Minute)
-	h := d / time.Hour
-	d -= h * time.Hour
-	m := d / time.Minute
-	embed := formatRankedEmbed("", "a", fmt.Sprintf("Leagly has been running for %02d:%02d", h, m), 16777215, time.Now())
+	embed := formatRankedEmbed("", "a", fmt.Sprintf("Leagly has been up since %s", start_time.Format(time.RFC1123)), 16777215, time.Now())
 	embed.Author = &discordgo.MessageEmbedAuthor{
-		Name:    fmt.Sprintf("Leagly Bot Uptime"),
+		Name:    "Leagly Bot Uptime",
 		IconURL: LEAGLY_SUMMONER_ICON,
 		URL:     "https://discord.com/oauth2/authorize?client_id=930924283599925260&permissions=1074056192&scope=bot",
 	}
@@ -131,7 +129,7 @@ func GetLastMatch(playerName string, region string, region2 string) (send *disco
 		if err != nil {
 			return send, err
 		}
-		embed := formatRankedEmbed(getMatchType(matchresults.Info.QueueId)+". Time: "+fmt.Sprintf("%02d:%02d", int(matchresults.Info.GameDuration/60), int(matchresults.Info.GameDuration%60)), fileName, formatItems(participant), getEmbedColour(participant.Win), time.Unix(int64((matchresults.Info.GameCreation)/1000) + +int64(matchresults.Info.GameDuration), 0).Local())
+		embed := formatRankedEmbed(getMatchType(matchresults.Info.QueueId)+". Time: "+fmt.Sprintf("%02d:%02d", int(matchresults.Info.GameDuration/60), int(matchresults.Info.GameDuration%60)), fileName, formatItems(participant), getEmbedColour(participant.Win), time.Unix(int64((matchresults.Info.GameCreation)/1000)+int64(matchresults.Info.GameDuration), 0).Local())
 		files := formatEmbedImages([]string{}, "./championImages/", fileName)
 		embed = formatEmbedAuthor(embed, accInfo, region)
 		embed = formatLastMatchEmbedFields(embed, matchresults, accInfo.Puuid)
@@ -301,7 +299,7 @@ func determineRoleByChampionPR(liveGameParticipants []LiveGameParticipants) []Li
 	set := make(map[string]struct{})
 	mapKey := -1
 	//start with a loop that iterates through each champion in the game
-
+	guessRole(&liveGameParticipants)
 	for k := 0; k < len(liveGameParticipants); k++ {
 		//grab all the playrates from each role for champion K
 		prHolder = append(prHolder, liveGameParticipants[k].championRole.Top.PlayRate, liveGameParticipants[k].championRole.Jungle.PlayRate, liveGameParticipants[k].championRole.Middle.PlayRate, liveGameParticipants[k].championRole.Bottom.PlayRate, liveGameParticipants[k].championRole.Utility.PlayRate)
@@ -364,13 +362,15 @@ func checkSecondary(playRates []float32) {
 	// }
 }
 
-/// TODO
-func guessRole(championRole *[]ChampionRole) {
-	// for i := range *championRole {
-	// 	if (*championRole)[i].hasSmite {
-	// 		(*championRole)[i].Jungle.PlayRate += 5
-	// 	}
-	// }
+///
+///
+///
+func guessRole(liveGameParticipants *[]LiveGameParticipants) {
+	for i := range *liveGameParticipants {
+		if (*liveGameParticipants)[i].Spell1Id == SMITE || (*liveGameParticipants)[i].Spell2Id == SMITE {
+			(*liveGameParticipants)[i].championRole.Jungle.PlayRate += 5
+		}
+	}
 }
 
 ///
