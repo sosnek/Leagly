@@ -93,7 +93,7 @@ func IsInGame(playerName string, region string) (send *discordgo.MessageSend, er
 			champion := GetChampion(strconv.Itoa(participant.ChampionId))
 			err = getChampionFile(champion + ".png")
 			if err != nil {
-				return ErrorCreate(fmt.Sprintf("Could not find data for %s", playerName)), errors.New("Error getting champ file for " + champion)
+				return ErrorCreate(fmt.Sprintf("Could not find data for %s", playerName)), errors.New("getChampionFile Error : " + err.Error())
 			}
 
 			embed := formatRankedEmbed(playerName+" Is currently in a "+getMatchType(liveGameInfo.GameQueueConfigId), champion+".png", "Playing as "+champion+". Time: "+Gametime, 71, time.Now())
@@ -123,20 +123,20 @@ func GetLastMatch(playerName string, region string, region2 string) (send *disco
 	if accInfo != nil {
 		matchID, err := getMatchID(accInfo.Puuid, 1, region2)
 		if err != nil {
-			return ErrorCreate(fmt.Sprintf("Could not find game data for %s", playerName)), errors.New("error getting matchID Error: " + err.Error())
+			return ErrorCreate(fmt.Sprintf("Could not find game data for %s", playerName)), errors.New("getMatchID Error: " + err.Error())
 		}
 		if len(matchID) < 1 {
 			return ErrorCreate(fmt.Sprintf("Could not find game data for %s", playerName)), errors.New("no game history found, unable to get lastmatch")
 		}
 		matchresults := getMatch(matchID[0], region2)
 		if matchresults == nil {
-			return ErrorCreate(fmt.Sprintf("Could not find game data for %s", playerName)), errors.New("error. matchresults was nil")
+			return ErrorCreate(fmt.Sprintf("Could not find game data for %s", playerName)), errors.New("getMatch error. matchresults was nil")
 		}
 		participant := parseParticipant(accInfo.Puuid, matchresults)
 		fileName := participant.ChampionName + ".png"
 		err = getChampionFile(fileName)
 		if err != nil {
-			return ErrorCreate(fmt.Sprintf("Could not find data for %s", playerName)), errors.New("error getting champion file. " + err.Error())
+			return ErrorCreate(fmt.Sprintf("Could not find data for %s", playerName)), errors.New("getChampionFile Error : " + err.Error())
 		}
 		embed := formatRankedEmbed(getMatchType(matchresults.Info.QueueId)+". Time: "+fmt.Sprintf("%02d:%02d", int(matchresults.Info.GameDuration/60), int(matchresults.Info.GameDuration%60)), fileName, formatItems(participant), getEmbedColour(participant.Win), time.Unix(int64((matchresults.Info.GameCreation)/1000)+int64(matchresults.Info.GameDuration), 0).Local())
 		files := formatEmbedImages([]string{}, "./championImages/", fileName)
@@ -159,7 +159,7 @@ func LookupPlayer(playerName string, region string, region2 string) (send *disco
 		fileName := getRankedAsset(rankedInfo)
 		matchIDs, err := getMatchID(accInfo.Puuid, MATCH_LIMIT, region2) // Request MATCH_LIMIT amount of match ID's to be later filtered out for ranked ones
 		if err != nil {
-			return ErrorCreate(fmt.Sprintf("Could not find game data for %s", playerName)), errors.New("error getting matchID Error: " + err.Error())
+			return ErrorCreate(fmt.Sprintf("Could not find game data for %s", playerName)), errors.New("getMatchID Error : " + err.Error())
 		}
 		if len(matchIDs) < 1 {
 			return ErrorCreate(fmt.Sprintf("Could not find game data for %s", playerName)), errors.New("no game history found, unable to get lastmatch")
@@ -169,7 +169,7 @@ func LookupPlayer(playerName string, region string, region2 string) (send *disco
 		for n, k := 0, 0; n < len(matchIDs) && k < NUM_OF_RANK_GAMES; n++ { // Get 10 games
 			newMatch := getMatch(matchIDs[n], region2)
 			if newMatch == nil {
-				return ErrorCreate(fmt.Sprintf("Could not find game data for %s", playerName)), errors.New("error. matchresults was nil")
+				return ErrorCreate(fmt.Sprintf("Could not find game data for %s", playerName)), errors.New("getMatch error. matchresults was nil")
 			}
 			if newMatch.Info.QueueId == RANKED_SOLO || newMatch.Info.QueueId == RANKED_FLEX { // But only if they are ranked_solo or ranked_flex games
 				matchStatsSlice = append(matchStatsSlice, newMatch)
@@ -212,12 +212,12 @@ func MasteryPlayer(playerName string, region string) (send *discordgo.MessageSen
 	if accInfo != nil {
 		rankedInfo := getRankedInfo(accInfo.Id, region)
 		if rankedInfo == nil {
-			return ErrorCreate(fmt.Sprintf("Could not find ranked data for %s", playerName)), errors.New("ranked data was nil")
+			return ErrorCreate(fmt.Sprintf("Could not find ranked data for %s", playerName)), errors.New("getRankedInfo error. ranked data was nil")
 		}
 		fileName := getRankedAsset(rankedInfo)
 		masteryStats := getMasteryData(accInfo.Id, region)
 		if masteryStats == nil {
-			return ErrorCreate(fmt.Sprintf("Could not find game data for %s", playerName)), errors.New("mastery data was nil")
+			return ErrorCreate(fmt.Sprintf("Could not find game data for %s", playerName)), errors.New("getMasteryData error. mastery data was nil")
 		}
 		embed := formatRankedEmbed("Champion Masteries", fileName, "", 16747032, time.Now())
 		embed = formatEmbedAuthor(embed, accInfo, region)
