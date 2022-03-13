@@ -16,7 +16,6 @@ import (
 )
 
 var BotId string
-var goBot *discordgo.Session
 var discordUser []*DiscordUser
 var up_time = time.Time{}
 
