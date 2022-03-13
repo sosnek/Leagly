@@ -61,7 +61,7 @@ func UpTime(start_time time.Time) *discordgo.MessageSend {
 ///
 ///
 func Help(discordRegion string, discorddPrefix string) *discordgo.MessageSend {
-	embed := formatRankedEmbed("", "a", "Here is a list of the available commands for Leagly bot:", 16777215, time.Now())
+	embed := formatRankedEmbed("", "a", "Leagly Bot v2.3.13\nHere is a list of the available commands for Leagly bot:", 16777215, time.Now())
 	embed.Author = &discordgo.MessageEmbedAuthor{
 		Name:    fmt.Sprintf("Leagly Bot. [%s] Region", discordRegion),
 		IconURL: LEAGLY_SUMMONER_ICON,
