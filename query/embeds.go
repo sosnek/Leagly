@@ -340,3 +340,15 @@ func formatEmbedAuthor(embed *discordgo.MessageEmbed, playerInfo Summoner, regio
 	}
 	return embed
 }
+
+///
+///
+///
+func formatEmbedAuthorLeagly(embed *discordgo.MessageEmbed, name string) *discordgo.MessageEmbed {
+	embed.Author = &discordgo.MessageEmbedAuthor{
+		Name:    name,
+		IconURL: LEAGLY_SUMMONER_ICON,
+		URL:     "https://discord.com/oauth2/authorize?client_id=930924283599925260&permissions=1074056192&scope=bot",
+	}
+	return embed
+}

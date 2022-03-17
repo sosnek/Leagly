@@ -159,6 +159,12 @@ func uptime(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 	}
 }
 
+func getGuildCount(s *discordgo.Session, m *discordgo.MessageCreate) {
+	if guilds.HasDebugPermissions(m.Author.ID) {
+		s.ChannelMessageSendComplex(m.ChannelID, query.GuildCount(guilds.GetGuildCount()))
+	}
+}
+
 func onCoolDown(user string, cd float64) float64 {
 	for i := range discordUser {
 		if discordUser[i].ID == user {

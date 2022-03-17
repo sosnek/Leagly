@@ -44,6 +44,10 @@ func GetGuildPrefix(guildID string) string {
 	return ">>"
 }
 
+func GetGuildCount() int {
+	return len(DiscordGuilds)
+}
+
 func HasDebugPermissions(authID string) bool {
 	return authID == MY_DISCORD_ID
 }
