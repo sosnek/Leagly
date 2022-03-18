@@ -250,7 +250,7 @@ func getMatch(matchid string, regionPrefix string) MatchResults {
 
 	match := string(body)
 
-	err = json.Unmarshal([]byte(match), &matchresults)
+	json.Unmarshal([]byte(match), &matchresults)
 	if matchresults == nil {
 		log.Println("unmarshal error: error unmarshaling match data")
 	}
@@ -274,7 +274,6 @@ func getMatchID(puuid string, count int, regionPrefix string) ([]string, error) 
 
 	_ = json.Unmarshal([]byte(body), &arr)
 	if len(arr) == 0 {
-		log.Println("Error unmarshaling MatchID data.")
 		return arr, errors.New("Error unmarshaling MatchID data.")
 	}
 	return arr, err
@@ -296,11 +295,9 @@ func getAccountInfo(playerName string, regionPrefix string) Summoner {
 	}
 	//Convert the body to type string
 	sb := string(body)
-
 	json.Unmarshal([]byte(sb), &sum)
 
 	return sum
-
 }
 
 func downloadFile(fileName string) error {

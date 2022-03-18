@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -85,13 +86,13 @@ func guildCreate(s *discordgo.Session, event *discordgo.GuildCreate) {
 	var exists bool
 	for i := 0; i < len(guilds.DiscordGuilds); i++ {
 		if event.ID == guilds.DiscordGuilds[i].ID {
-			log.Println("Guild ID:" + event.Guild.ID + ". Name: " + event.Guild.Name + " Already exists")
+			log.Println("Guild ID:" + event.Guild.ID + ". Name: " + event.Guild.Name + " Already exists. Num of users in guild: " + strconv.Itoa(event.Guild.MemberCount))
 			exists = true
 		}
 	}
 	if !exists {
 		guilds.DiscordGuilds = append(guilds.DiscordGuilds, &guilds.DiscordGuild{ID: event.ID, Region: "NA1", Region2: "americas", Prefix: ">>"})
-		log.Println("Added guild ID:" + event.Guild.ID + ". Name: " + event.Guild.Name)
+		log.Println("Added guild ID:" + event.Guild.ID + ". Name: " + event.Guild.Name + " Num of users in guild: " + strconv.Itoa(event.Guild.MemberCount))
 	}
 }
 
