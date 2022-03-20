@@ -100,6 +100,8 @@ type Mastery []*struct {
 	ChampionLevel  int
 	ChampionPoints int
 	LastPlayTime   int64
+	ChestGranted   bool
+	TokensEarned   int
 }
 
 type PlayerMatchStats struct {

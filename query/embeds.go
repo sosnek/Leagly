@@ -75,30 +75,57 @@ func formatHelpEmbed(embed *discordgo.MessageEmbed, prefix string) *discordgo.Me
 ///
 ///
 func formatMasteriesEmbedFields(embed *discordgo.MessageEmbed, mastery Mastery) *discordgo.MessageEmbed {
-	embed2 := &discordgo.MessageEmbed{}
-	for n := 0; n+1 < len(mastery) && n < 10; n++ {
-		embed2.Fields = []*discordgo.MessageEmbedField{
-			{
-				Name: "> <:" + strconv.Itoa(mastery[n].ChampionID) + ":" + GetEmoji(GetChampion(strconv.Itoa(mastery[n].ChampionID))) + ">" +
-					"<:" + "Mastery" + strconv.Itoa(mastery[n].ChampionLevel) + ":" + GetEmoji(GetChampion("Mastery"+strconv.Itoa(mastery[n].ChampionLevel))) + ">",
-				Value: "> <:" + strconv.Itoa(mastery[n+1].ChampionID) + ":" + GetEmoji(GetChampion(strconv.Itoa(mastery[n+1].ChampionID))) + ">" +
-					"<:" + "Mastery" + strconv.Itoa(mastery[n+1].ChampionLevel) + ":" + GetEmoji(GetChampion("Mastery"+strconv.Itoa(mastery[n+1].ChampionLevel))) + ">",
-				Inline: true,
-			},
-			{
-				Name:   GetChampion(strconv.Itoa(mastery[n].ChampionID)),
-				Value:  "**" + GetChampion(strconv.Itoa(mastery[n+1].ChampionID)) + "**",
-				Inline: true,
-			},
-			{
-				Name:   "__" + strconv.Itoa(mastery[n].ChampionPoints) + "__",
-				Value:  "__" + "**" + strconv.Itoa(mastery[n+1].ChampionPoints) + "**__",
-				Inline: true,
-			},
-		}
-		embed.Fields = append(embed.Fields, embed2.Fields[0], embed2.Fields[1], embed2.Fields[2])
-		n++
+	var championString string
+	var masteryString string
+	var chestString string
+
+	var totalPoints int
+	totalChampions := len(mastery)
+	var masteryTokens int
+	for n := 0; n < len(mastery); n++ {
+		totalPoints += mastery[n].ChampionPoints
+		masteryTokens += mastery[n].TokensEarned
 	}
+
+	for n := 0; n < len(mastery) && n < 10; n++ {
+		championString += "> <:" + strconv.Itoa(mastery[n].ChampionID) + ":" + GetEmoji(GetChampion(strconv.Itoa(mastery[n].ChampionID))) + ">" +
+			"<:" + "Mastery" + strconv.Itoa(mastery[n].ChampionLevel) + ":" + GetEmoji(GetChampion("Mastery"+strconv.Itoa(mastery[n].ChampionLevel))) + "> " + GetChampion(strconv.Itoa(mastery[n].ChampionID)) + "\n"
+		masteryString += strconv.Itoa(mastery[n].ChampionPoints) + "\n"
+		chestString += " <:Chest" + strconv.FormatBool(mastery[n].ChestGranted) + ":" + GetEmoji("Chest"+strconv.FormatBool(mastery[n].ChestGranted)) + ">\n"
+	}
+	embed.Fields = []*discordgo.MessageEmbedField{
+		{
+			Name:   "Champion",
+			Value:  championString,
+			Inline: true,
+		},
+		{
+			Name:   "Mastery",
+			Value:  masteryString,
+			Inline: true,
+		},
+		{
+			Name:   "Chests",
+			Value:  chestString,
+			Inline: true,
+		},
+		{
+			Name:   "\u200b",
+			Value:  "Champions: \n __" + strconv.Itoa(totalChampions) + "__",
+			Inline: true,
+		},
+		{
+			Name:   "\u200b",
+			Value:  "Total Mastery Points:\n__" + strconv.Itoa(totalPoints) + "__",
+			Inline: true,
+		},
+		{
+			Name:   "\u200b",
+			Value:  "Tokens : \n__" + strconv.Itoa(masteryTokens) + "__",
+			Inline: true,
+		},
+	}
+
 	return embed
 }
 
