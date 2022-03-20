@@ -160,6 +160,10 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		getGuildCount(s, m)
 	}
 
+	if command == prefix+"feedback" {
+		feedback(s, m, args)
+	}
+
 	for _, v := range m.Mentions {
 		if v.ID == s.State.User.ID {
 			handleHelp(s, m)

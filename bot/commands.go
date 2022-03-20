@@ -114,6 +114,7 @@ func changeRegion(s *discordgo.Session, m *discordgo.MessageCreate, args []strin
 				}
 			}
 		} else {
+			log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " Invalid region")
 			s.ChannelMessageSend(m.ChannelID,
 				"Invalid region provided. Valid regions are : BR1, EUN1, EUW1, JP1, KR, LA1, LA2, NA1, OC1, RU, TR1")
 		}
@@ -162,6 +163,18 @@ func uptime(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 func getGuildCount(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if guilds.HasDebugPermissions(m.Author.ID) {
 		s.ChannelMessageSendComplex(m.ChannelID, query.GuildCount(guilds.GetGuildCount()))
+	}
+}
+
+func feedback(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
+	if validateName(args) {
+		if onCoolDown(m.Author.ID, 30) > 0 {
+			s.ChannelMessageSend(m.ChannelID, "You're currently on cooldown. Please wait a few seconds.")
+			log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " on cooldown")
+			return
+		} else {
+			s.ChannelMessageSend("955121671105286175", fmt.Sprintf("From %s, Feedback: %s ", m.Author.Username, args[1]))
+		}
 	}
 }
 
