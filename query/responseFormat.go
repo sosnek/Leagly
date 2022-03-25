@@ -35,6 +35,18 @@ const NUM_OF_RANK_GAMES = 10
 const LEAGLY_SUMMONER_ICON = "http://ddragon.leagueoflegends.com/cdn/12.4.1/img/profileicon/1630.png"
 const LEAGLY_ERROR_ICON = "https://imgur.com/YA2zxjj.png"
 
+///
+func RiotApiStatus(discordRegion string) *discordgo.MessageSend {
+	embed := formatRankedEmbed("", "a", "Status of league of legends api's", 16777215, time.Now())
+	embed = formatEmbedAuthorLeagly(embed, "Riot API Status", LEAGLY_SUMMONER_ICON)
+	riotStatus := getRiotStatus(discordRegion)
+	embed = formatApiStatusEmbed(embed, riotStatus)
+	return createMessageSend(embed, []*discordgo.File{})
+}
+
+///
+///
+///
 func GuildCount(numGuilds int) *discordgo.MessageSend {
 	embed := formatRankedEmbed("", "a", fmt.Sprintf("%d Discord servers have added Leagly", numGuilds), 16777215, time.Now())
 	embed = formatEmbedAuthorLeagly(embed, "Leagly Discord Server Count", LEAGLY_SUMMONER_ICON)

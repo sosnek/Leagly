@@ -84,6 +84,26 @@ type Status struct {
 	Status_code int
 }
 
+type RiotStatus struct {
+	ID      string   `json:"id"`
+	Name    string   `json:"name"`
+	Locales []string `json:"locales"`
+	//Maintenances []interface{} `json:"maintenances"`
+	Incidents []struct {
+		Titles []struct {
+			Content string `json:"content"`
+			Locale  string `json:"locale"`
+		} `json:"titles"`
+		Updates []struct {
+			Author       string `json:"author"`
+			Translations []struct {
+				Content string `json:"content"`
+				Locale  string `json:"locale"`
+			} `json:"translations"`
+		} `json:"updates"`
+	} `json:"incidents"`
+}
+
 type RankedInfo struct {
 	LeagueID     string
 	QueueType    string
@@ -300,6 +320,27 @@ func getAccountInfo(playerName string, regionPrefix string) Summoner {
 	json.Unmarshal([]byte(sb), &sum)
 
 	return sum
+}
+
+///https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/
+func getRiotStatus(regionPrefix string) RiotStatus {
+	resp, err := http.Get("https://" + regionPrefix + ".api.riotgames.com/lol/status/v4/platform-data?api_key=" + config.ApiKey)
+	var status RiotStatus
+	if err != nil {
+		log.Println("Unable to get account info. Error: " + err.Error())
+		return status
+	}
+
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Println("Unable to read account info. Error: " + err.Error())
+		return status
+	}
+	//Convert the body to type string
+	sb := string(body)
+	json.Unmarshal([]byte(sb), &status)
+
+	return status
 }
 
 func downloadFile(fileName string) error {

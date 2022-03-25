@@ -27,6 +27,11 @@ func createMessageSend(embed *discordgo.MessageEmbed, files []*discordgo.File) *
 	return send
 }
 
+func formatApiStatusEmbed(embed *discordgo.MessageEmbed, riotStatus RiotStatus) *discordgo.MessageEmbed {
+
+	return embed //TODO
+}
+
 ///
 ///
 ///

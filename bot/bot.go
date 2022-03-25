@@ -34,6 +34,7 @@ func ConnectToDiscord() {
 	}
 	leaglyBot.AddHandler(messageCreate)
 	leaglyBot.AddHandler(guildCreate)
+	leaglyBot.AddHandler(guildDelete)
 
 	leaglyBot.Identify.Intents = discordgo.IntentsGuilds | discordgo.IntentsGuildMessages
 
@@ -57,6 +58,7 @@ func ConnectToDiscord() {
 func Initialize(s *discordgo.Session) {
 	query.InitializedChampStruct()
 	InitializeEmojis(s)
+	s.UpdateGameStatus(0, ">>help | @Leagly")
 	up_time = time.Now()
 }
 
@@ -93,6 +95,21 @@ func guildCreate(s *discordgo.Session, event *discordgo.GuildCreate) {
 	if !exists {
 		guilds.DiscordGuilds = append(guilds.DiscordGuilds, &guilds.DiscordGuild{ID: event.ID, Region: "NA1", Region2: "americas", Prefix: ">>"})
 		log.Println("Added guild ID:" + event.Guild.ID + ". Name: " + event.Guild.Name + " Num of users in guild: " + strconv.Itoa(event.Guild.MemberCount))
+	}
+}
+
+func guildDelete(bot *discordgo.Session, event *discordgo.GuildDelete) {
+	if event.Unavailable {
+		return
+	}
+
+	for i := 0; i < len(guilds.DiscordGuilds); i++ {
+		if event.ID == guilds.DiscordGuilds[i].ID {
+			log.Println("Guild ID:" + event.Guild.ID + ". Name: " + event.Guild.Name + " has removed Leagly.")
+			guilds.DiscordGuilds[i] = guilds.DiscordGuilds[len(guilds.DiscordGuilds)-1]
+			guilds.DiscordGuilds = guilds.DiscordGuilds[:len(guilds.DiscordGuilds)-1]
+			return
+		}
 	}
 }
 
@@ -162,6 +179,10 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	if command == prefix+"feedback" {
 		feedback(s, m, args)
+	}
+
+	if command == prefix+"status" {
+		status(s, m, args)
 	}
 
 	for _, v := range m.Mentions {

@@ -160,6 +160,14 @@ func uptime(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 	}
 }
 
+func status(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
+	if guilds.HasDebugPermissions(m.Author.ID) {
+		if len(args) < 2 {
+			s.ChannelMessageSendComplex(m.ChannelID, query.RiotApiStatus(guilds.GetGuildRegion(m.GuildID)))
+		}
+	}
+}
+
 func getGuildCount(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if guilds.HasDebugPermissions(m.Author.ID) {
 		s.ChannelMessageSendComplex(m.ChannelID, query.GuildCount(guilds.GetGuildCount()))
