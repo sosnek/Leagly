@@ -229,7 +229,7 @@ func MasteryPlayer(playerName string, region string) (send *discordgo.MessageSen
 		}
 		fileName := getRankedAsset(rankedInfo)
 		masteryStats := getMasteryData(accInfo.Id, region)
-		if masteryStats == nil {
+		if len(masteryStats) < 1 {
 			return ErrorCreate(fmt.Sprintf("Could not find game data for %s **[%s]**", playerName, region)), errors.New("getMasteryData error. mastery data was nil")
 		}
 		embed := formatRankedEmbed("Champion Masteries", fileName, "", 16747032, time.Now())
