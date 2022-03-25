@@ -322,18 +322,17 @@ func getAccountInfo(playerName string, regionPrefix string) Summoner {
 	return sum
 }
 
-///https://na1.api.riotgames.com/lol/summoner/v4/summoners/by-name/
 func getRiotStatus(regionPrefix string) RiotStatus {
 	resp, err := http.Get("https://" + regionPrefix + ".api.riotgames.com/lol/status/v4/platform-data?api_key=" + config.ApiKey)
 	var status RiotStatus
 	if err != nil {
-		log.Println("Unable to get account info. Error: " + err.Error())
+		log.Println("Unable to get riot status info. Error: " + err.Error())
 		return status
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("Unable to read account info. Error: " + err.Error())
+		log.Println("Unable to read riot status info. Error: " + err.Error())
 		return status
 	}
 	//Convert the body to type string
