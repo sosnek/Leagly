@@ -28,8 +28,40 @@ func createMessageSend(embed *discordgo.MessageEmbed, files []*discordgo.File) *
 }
 
 func formatApiStatusEmbed(embed *discordgo.MessageEmbed, riotStatus RiotStatus) *discordgo.MessageEmbed {
+	if len(riotStatus.Incidents) < 1 {
+		embed.Fields = []*discordgo.MessageEmbedField{
+			{
+				Name:   "No incidents found.",
+				Value:  "\u200b",
+				Inline: false,
+			},
+		}
+	}
+	embed2 := &discordgo.MessageEmbed{}
+	var statusTitle string
+	var statusMsg string
+	for n := 0; n < len(riotStatus.Incidents); n++ {
+		if len(riotStatus.Incidents[n].Titles) > 1 && len(riotStatus.Incidents[n].Updates[0].Translations) > 1 {
+			statusTitle = riotStatus.Incidents[n].Titles[1].Content
+			statusMsg = riotStatus.Incidents[n].Updates[0].Translations[1].Content //not sure if there will always be an update?
+		} else {
+			statusTitle = riotStatus.Incidents[n].Titles[0].Content
+			statusMsg = riotStatus.Incidents[n].Updates[0].Translations[0].Content
+		}
+		if len(riotStatus.Incidents[n].Updates) > 1 {
+			fmt.Println("test")
+		}
 
-	return embed //TODO
+		embed2.Fields = []*discordgo.MessageEmbedField{
+			{
+				Name:   statusTitle,
+				Value:  statusMsg,
+				Inline: false,
+			},
+		}
+		embed.Fields = append(embed.Fields, embed2.Fields[0])
+	}
+	return embed
 }
 
 ///

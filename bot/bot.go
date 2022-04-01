@@ -88,7 +88,7 @@ func guildCreate(s *discordgo.Session, event *discordgo.GuildCreate) {
 	var exists bool
 	for i := 0; i < len(guilds.DiscordGuilds); i++ {
 		if event.ID == guilds.DiscordGuilds[i].ID {
-			log.Println("Guild ID:" + event.Guild.ID + ". Name: " + event.Guild.Name + " Already exists. Num of users in guild: " + strconv.Itoa(event.Guild.MemberCount))
+			//log.Println("Guild ID:" + event.Guild.ID + ". Name: " + event.Guild.Name + " Already exists. Num of users in guild: " + strconv.Itoa(event.Guild.MemberCount))
 			exists = true
 		}
 	}
