@@ -156,16 +156,17 @@ func changePrefix(s *discordgo.Session, m *discordgo.MessageCreate, args []strin
 
 func uptime(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 	if len(args) < 2 {
+		log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + guilds.GetGuildPrefix(m.GuildID) + "uptime")
 		s.ChannelMessageSendComplex(m.ChannelID, query.UpTime(up_time))
 	}
 }
 
 func status(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
-	if guilds.HasDebugPermissions(m.Author.ID) {
-		if len(args) < 2 {
-			s.ChannelMessageSendComplex(m.ChannelID, query.RiotApiStatus(guilds.GetGuildRegion(m.GuildID)))
-		}
+	if len(args) < 2 {
+		log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + guilds.GetGuildPrefix(m.GuildID) + "status")
+		s.ChannelMessageSendComplex(m.ChannelID, query.RiotApiStatus(guilds.GetGuildRegion(m.GuildID)))
 	}
+
 }
 
 func getGuildCount(s *discordgo.Session, m *discordgo.MessageCreate) {
@@ -181,6 +182,7 @@ func feedback(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 			log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " on cooldown")
 			return
 		} else {
+			log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + guilds.GetGuildPrefix(m.GuildID) + "feedback")
 			s.ChannelMessageSend("955121671105286175", fmt.Sprintf("From %s, Feedback: %s ", m.Author.Username, args[1]))
 		}
 	}
