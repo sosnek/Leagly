@@ -101,9 +101,9 @@ func changeRegion(s *discordgo.Session, m *discordgo.MessageCreate, args []strin
 			for _, v := range guilds.DiscordGuilds {
 				if v.ID == m.GuildID {
 					v.Region = strings.ToUpper(args[1])
-					if v.Region == "BR1" || v.Region == "NA1" || v.Region == "LA1" || v.Region == "LA2" {
+					if v.Region == "BR1" || v.Region == "NA1" || v.Region == "LA1" || v.Region == "LA2" || v.Region == "OCE" {
 						v.Region2 = "americas"
-					} else if v.Region == "JP1" || v.Region == "OCE" || v.Region == "KR" {
+					} else if v.Region == "JP1" || v.Region == "KR" {
 						v.Region2 = "asia"
 					} else {
 						v.Region2 = "europe"

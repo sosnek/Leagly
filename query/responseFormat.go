@@ -75,7 +75,7 @@ func UpTime(start_time time.Time) *discordgo.MessageSend {
 /// [Join Leagly Discord](https://discord.gg/bxQRKA8D9g)\n
 ///
 func Help(discordRegion string, discorddPrefix string) *discordgo.MessageSend {
-	embed := formatRankedEmbed("", "a", "Leagly Bot v2.4.1\nHere is a list of the available commands for Leagly bot:", 16777215, time.Now())
+	embed := formatRankedEmbed("", "a", "Leagly Bot v2.4.4\nHere is a list of the available commands for Leagly bot:", 16777215, time.Now())
 	embed = formatEmbedAuthorLeagly(embed, fmt.Sprintf("Leagly Bot. [%s] Region", discordRegion), LEAGLY_SUMMONER_ICON)
 	embed = formatHelpEmbed(embed, discorddPrefix)
 	return createMessageSend(embed, []*discordgo.File{})
@@ -147,6 +147,7 @@ func GetLastMatch(playerName string, region string, region2 string) (send *disco
 		}
 		participant := parseParticipant(accInfo.Puuid, matchresults)
 		fileName := participant.ChampionName + ".png"
+		fileName = checkFileName(fileName)
 		err = getChampionFile(fileName)
 		if err != nil {
 			return ErrorCreate(fmt.Sprintf("Could not find data for %s **[%s]**", playerName, region)), errors.New("getChampionFile Error : " + err.Error())
@@ -827,6 +828,13 @@ func parseLiveParticipant(sumID string, liveGameInfo LiveGameInfo) LiveGameParti
 		}
 	}
 	return liveGameInfo.Participants[i]
+}
+
+func checkFileName(fileName string) string {
+	if fileName == "FiddleSticks.png" {
+		fileName = "Fiddlesticks.png"
+	}
+	return fileName
 }
 
 // Because discord embeds only support 2x2 images at a maximum, I decided to use a method
