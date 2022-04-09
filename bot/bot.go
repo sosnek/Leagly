@@ -60,6 +60,7 @@ func Initialize(s *discordgo.Session) {
 	InitializeEmojis(s)
 	s.UpdateGameStatus(0, ">>help | @Leagly")
 	up_time = time.Now()
+	go heartBeat(s)
 }
 
 ///
@@ -78,6 +79,18 @@ func InitializeEmojis(s *discordgo.Session) {
 	emoji9, _ := s.GuildEmojis("946539173597302804")
 	emojis = append(emojis, emoji, emoji2, emoji3, emoji4, emoji5, emoji6, emoji7, emoji8, emoji9)
 	query.InitEmojis(emojis)
+}
+
+func heartBeat(s *discordgo.Session) {
+	uptimeTicker := time.NewTicker(60 * time.Second)
+	counter := 0
+	for {
+		select {
+		case <-uptimeTicker.C:
+			counter++
+			s.ChannelMessageSend("962149630815137832", fmt.Sprintf("```Heartbeat counter %d. time : %s```", counter, time.Now()))
+		}
+	}
 }
 
 func guildCreate(s *discordgo.Session, event *discordgo.GuildCreate) {

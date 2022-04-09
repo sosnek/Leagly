@@ -791,8 +791,10 @@ func getRankFile(rank string) string {
 ///
 ///
 func getMatchType(queueType int) string {
-	if queueType == RANKED_SOLO || queueType == RANKED_FLEX {
+	if queueType == RANKED_SOLO {
 		return "Summoners Rift Ranked"
+	} else if queueType == RANKED_FLEX {
+		return "Summoners Rift Flex"
 	} else if queueType == NORMAL {
 		return "Summoners Rift Normal"
 	} else if queueType == URF {
