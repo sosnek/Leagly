@@ -27,7 +27,7 @@ func createMessageSend(embed *discordgo.MessageEmbed, files []*discordgo.File) *
 	return send
 }
 
-func formatApiStatusEmbed(embed *discordgo.MessageEmbed, riotStatus RiotStatus) *discordgo.MessageEmbed {
+func formatApiStatusEmbed(embed *discordgo.MessageEmbed, riotStatus RiotStatus, lang string) *discordgo.MessageEmbed {
 	if len(riotStatus.Incidents) < 1 {
 		embed.Fields = []*discordgo.MessageEmbedField{
 			{
@@ -41,17 +41,12 @@ func formatApiStatusEmbed(embed *discordgo.MessageEmbed, riotStatus RiotStatus) 
 	var statusTitle string
 	var statusMsg string
 	for n := 0; n < len(riotStatus.Incidents); n++ {
-		if len(riotStatus.Incidents[n].Titles) > 1 && len(riotStatus.Incidents[n].Updates[0].Translations) > 1 {
-			statusTitle = riotStatus.Incidents[n].Titles[1].Content
-			statusMsg = riotStatus.Incidents[n].Updates[0].Translations[1].Content //not sure if there will always be an update?
-		} else {
-			statusTitle = riotStatus.Incidents[n].Titles[0].Content
-			statusMsg = riotStatus.Incidents[n].Updates[0].Translations[0].Content
+		for m := 0; m < len(riotStatus.Incidents[n].Titles); m++ {
+			if lang == riotStatus.Incidents[n].Titles[m].Locale {
+				statusTitle = riotStatus.Incidents[n].Titles[m].Content
+				statusMsg = riotStatus.Incidents[n].Updates[0].Translations[m].Content
+			}
 		}
-		if len(riotStatus.Incidents[n].Updates) > 1 {
-			fmt.Println("test")
-		}
-
 		embed2.Fields = []*discordgo.MessageEmbedField{
 			{
 				Name:   statusTitle,

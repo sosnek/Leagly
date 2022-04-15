@@ -40,7 +40,21 @@ func RiotApiStatus(discordRegion string) *discordgo.MessageSend {
 	embed := formatRankedEmbed("", "a", "Status of league of legends api's", 16777215, time.Now())
 	embed = formatEmbedAuthorLeagly(embed, "Riot API Status", LEAGLY_SUMMONER_ICON)
 	riotStatus := getRiotStatus(discordRegion)
-	embed = formatApiStatusEmbed(embed, riotStatus)
+	langs := map[string]string{
+		"NA1":  "en_US",
+		"BR1":  "pt_BR",
+		"LA1":  "es_MX",
+		"LA2":  "es_AR",
+		"OC1":  "en_AU",
+		"JP1":  "ja_JP",
+		"KR":   "ko_KR",
+		"EUN1": "en_GB",
+		"EUW1": "en_GB",
+		"RU1":  "ru_RU",
+		"TR1":  "tr_TR",
+	}
+
+	embed = formatApiStatusEmbed(embed, riotStatus, langs[discordRegion])
 	return createMessageSend(embed, []*discordgo.File{})
 }
 
@@ -520,6 +534,7 @@ func formatEmbedImages(imageNames []string, relativePath string, rankFileName st
 
 	for n := 0; n < len(imageNames); n++ {
 		imageNames[n] += ".png"
+		imageNames[n] = checkFileName(imageNames[n])
 		err := getChampionFile(imageNames[n])
 		if err != nil {
 			return files

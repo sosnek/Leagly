@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"       //used to print errors majorly.
 	"io/ioutil" //it will be used to help us read our config.json file.
+	"os"
 )
 
 var (
@@ -43,6 +44,13 @@ func ReadConfig() error {
 	BotPrefix = config.BotPrefix
 	Region = config.Region
 	ApiKey = config.ApiKey
+
+	if Token == "" {
+		Token = os.Getenv("DiscordKey")
+	}
+	if ApiKey == "" {
+		ApiKey = os.Getenv("RiotKey")
+	}
 
 	return nil
 }
