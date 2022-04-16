@@ -373,18 +373,16 @@ func downloadFile(fileName string) error {
 	return nil
 }
 
-func InitializedChampStruct() {
+func InitializedChampStruct() error {
 	resp, err := http.Get(CHAMP_DATA)
 
 	if err != nil {
-		log.Println("Unable to get champion struct data. Error: " + err.Error())
-		return
+		return errors.New("Unable to get champion struct data. Error: " + err.Error())
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("Unable to read champion struct data. Error: " + err.Error())
-		return
+		return errors.New("Unable to read champion struct data. Error: " + err.Error())
 	}
 	//Convert the body to type string
 	sb := string(body)
@@ -392,35 +390,40 @@ func InitializedChampStruct() {
 	var objmap map[string]json.RawMessage
 	json.Unmarshal([]byte(sb), &objmap)
 	json.Unmarshal(objmap["data"], &champ3)
+	return nil
 }
 
-// func ChampionPositions() *map[string]ChampionRole {
-// 	resp, err := http.Get("https://cdn.merakianalytics.com/riot/lol/resources/latest/en-US/championrates.json")
-// 	if err != nil {
-// 		log.Println("Unable to get champion role data. Error: " + err.Error())
-// 		return nil
-// 	}
+func CreateChampionRatesFile() {
+	resp, err := http.Get("https://cdn.merakianalytics.com/riot/lol/resources/latest/en-US/championrates.json")
+	if err != nil {
+		log.Println("Unable to get champion role data. Error: " + err.Error())
+		return
+	}
 
-// 	body, err := ioutil.ReadAll(resp.Body)
-// 	if err != nil {
-// 		log.Println("Unable to read champion role data. Error: " + err.Error())
-// 		return nil
-// 	}
-// 	//Convert the body to type string
-// 	sb := string(body)
-
-// 	var objmap map[string]json.RawMessage
-// 	var champRole *map[string]ChampionRole
-// 	json.Unmarshal([]byte(sb), &objmap)
-// 	json.Unmarshal(objmap["data"], &champRole)
-
-// 	return champRole
-// }
+	body, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		log.Println("Unable to read champion role data. Error: " + err.Error())
+		return
+	}
+	f, err := os.OpenFile("championRoleRates/championrates.json", os.O_RDWR|os.O_CREATE|os.O_TRUNC, 0755)
+	if err != nil {
+		log.Println("Error overwriting champion role rates file. Error:  " + err.Error())
+		return
+	}
+	f.Write(body)
+	if err := f.Close(); err != nil {
+		log.Println("Error closing file. Error:  " + err.Error())
+	}
+}
 
 //Merakianalytics stopped updating their data so for now I will keep a local version that will need manual updating.
 func ChampionPositions() *map[string]ChampionRole {
 
-	file, _ := ioutil.ReadFile("championRoleRates/championrates.json")
+	file, err := ioutil.ReadFile("championRoleRates/championrates.json")
+	if err != nil {
+		log.Println("Error reading champion role rates file. Error:  " + err.Error())
+		return nil
+	}
 	//Convert the body to type string
 	sb := string(file)
 

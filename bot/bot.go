@@ -56,7 +56,12 @@ func ConnectToDiscord() {
 ///
 ///
 func Initialize(s *discordgo.Session) {
-	query.InitializedChampStruct()
+	err := query.InitializedChampStruct()
+	if err != nil {
+		log.Println(err)
+		panic(err)
+	}
+	query.CreateChampionRatesFile()
 	InitializeEmojis(s)
 	s.UpdateGameStatus(0, ">>help | @Leagly")
 	up_time = time.Now()
