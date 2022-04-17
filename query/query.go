@@ -9,9 +9,7 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"regexp"
 	"strconv"
-	"strings"
 )
 
 type Summoner *struct {
@@ -187,7 +185,7 @@ type BannedChampions struct {
 const BASE_ASSET_URL = "http://ddragon.leagueoflegends.com/cdn/"
 const CHAMP_DATA = "/data/en_US/champion.json"
 const CHAMP_ICONS = "/img/champion/"
-const LEAGLY_SUMMONER_ICON = "http://ddragon.leagueoflegends.com/cdn/12.4.1/img/profileicon/1630.png"
+const LEAGLY_SUMMONER_ICON = "/img/profileicon/1630.png"
 const LEAGLY_ERROR_ICON = "https://imgur.com/YA2zxjj.png"
 const PATCH_NOTES_BASE_URL = "https://www.leagueoflegends.com/en-us/news/game-updates/patch-"
 const PATCH_NOTES_HISTORY_URL = "https://www.leagueoflegends.com/en-us/news/tags/patch-notes/"
@@ -445,19 +443,24 @@ func GetLeagueVersion() string {
 	//
 	resp, err := http.Get("http://ddragon.leagueoflegends.com/api/versions.json")
 	if err != nil {
-		log.Println("Unable to get league of legends version. Error: " + err.Error())
-		return "12.7.1" //return a stable version so atleast assets can be grabbed
+		log.Println("Unable to get league of legends version. Defaulting to 12.7.1 Error: " + err.Error())
+		return "12.7.1"
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("Unable to read riot status info. Error: " + err.Error())
+		log.Println("Unable to read riot status info. Defaulting to 12.7.1 Error: " + err.Error())
 		return "12.7.1"
 	}
 	//Convert the body to type string
 	var version []string
 	sb := string(body)
 	json.Unmarshal([]byte(sb), &version)
+
+	if len(version) < 1 {
+		log.Println("No version was found. Defaulting to 12.7.1. Error: " + err.Error())
+		return "12.7.1"
+	}
 
 	return version[0]
 }
@@ -466,48 +469,15 @@ func GetPatchNotesImage(url string, version string) error {
 	// Request the HTML page.
 	resp, err := http.Get(url)
 	if err != nil {
-		log.Fatal(err) //@@@@@@@@
+		log.Println(err) //@@@@@@@@
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
-		log.Fatalf("Unable to get patchnotes URL with status code error: %d %s", resp.StatusCode, resp.Status)
+		log.Println("Unable to get patchnotes URL with status code error: " + strconv.Itoa(resp.StatusCode) + resp.Status)
 	}
-
 	htmlData, err := ioutil.ReadAll(resp.Body)
-
 	if err != nil {
-		log.Fatal(err)
+		log.Println(err)
 	}
-
-	imageRegExp := regexp.MustCompile(`<img[^>]+\bsrc=["']([^"']+)["']`)
-
-	subMatchSlice := imageRegExp.FindAllStringSubmatch(string(htmlData), -1)
-	for _, imagesUrl := range subMatchSlice {
-		if strings.Contains(imagesUrl[1], "1920x1080") {
-			resp2, err := http.Get(imagesUrl[1])
-			if err != nil {
-				log.Println("Unable to get patchnotes image URL" + err.Error())
-				return err
-			}
-			defer resp2.Body.Close()
-			if resp2.StatusCode != 200 {
-				log.Println("Unable to get URL with status code error: %d %s", resp.StatusCode, resp.Status)
-				return errors.New("Unable to get patchnotes image URL with status code error: " + resp.Status)
-			}
-			file, err := os.Create("./patchNotes/" + version + ".png")
-			if err != nil {
-				log.Println("Error creating patchnotes file. Error: " + err.Error())
-				return err
-			}
-			defer file.Close()
-			_, err = io.Copy(file, resp2.Body)
-			if err != nil {
-				log.Println("Error copying patchnotes file. Error: " + err.Error())
-				return err
-			}
-
-		}
-	}
-	return nil
-
+	return patchNotesImgRegex(htmlData, version)
 }

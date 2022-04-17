@@ -410,7 +410,7 @@ func formatRankedEmbed(playerName string, fileName string, description string, c
 func formatEmbedAuthor(embed *discordgo.MessageEmbed, playerInfo Summoner, region string) *discordgo.MessageEmbed {
 	embed.Author = &discordgo.MessageEmbedAuthor{
 		Name:    playerInfo.Name + " [" + region + "]",
-		IconURL: "http://ddragon.leagueoflegends.com/cdn/12.2.1/img/profileicon/" + strconv.Itoa(playerInfo.ProfileIconId) + ".png",
+		IconURL: "http://ddragon.leagueoflegends.com/cdn/" + Version + "/img/profileicon/" + strconv.Itoa(playerInfo.ProfileIconId) + ".png",
 		URL:     "https://na.op.gg/summoner/userName=" + strings.ReplaceAll(playerInfo.Name, " ", "%20"),
 	}
 	return embed

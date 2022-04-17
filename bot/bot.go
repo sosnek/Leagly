@@ -58,15 +58,15 @@ func ConnectToDiscord() {
 func Initialize(s *discordgo.Session) {
 	err := query.InitializedChampStruct()
 	if err != nil {
-		log.Println(err)
 		panic(err)
 	}
 	query.CreateChampionRatesFile()
 	InitializeEmojis(s)
-	s.UpdateGameStatus(0, ">>help | @Leagly")
 	up_time = time.Now()
-	query.GetLeagueVersion()
+	query.Version = query.GetLeagueVersion()
+	go query.UpdateVersionAsync(s)
 	go heartBeat(s)
+	s.UpdateGameStatus(0, ">>help | @Leagly")
 }
 
 ///
@@ -145,7 +145,8 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if len(args) < 1 {
 		return
 	}
-	prefix := strings.ToLower(guilds.GetGuildPrefix(m.GuildID))
+	guild := guilds.GetGuild(m.GuildID)
+	prefix := strings.ToLower(guild.Prefix)
 
 	command := strings.ToLower(args[0])
 	// !help

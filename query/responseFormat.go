@@ -10,7 +10,6 @@ import (
 	"os"
 	"regexp"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
@@ -18,6 +17,9 @@ import (
 
 var emojis [][]*discordgo.Emoji
 var champ3 map[string]Champion
+
+//League of legends versino
+var Version string
 
 //game codes
 const URF = 900
@@ -41,7 +43,7 @@ func PatchNotes() (*discordgo.MessageSend, error) {
 	}
 	latestPatchNotes := PATCH_NOTES_BASE_URL + versionNum[0] + "-" + versionNum[1] + "-notes/"
 	embed := formatRankedEmbed("", "a", fmt.Sprintf("League of Legends is on patch %s.%s", versionNum[0], versionNum[1]), 16777215, time.Now())
-	embed = formatEmbedAuthorLeagly(embed, "League of Legends Patch Notes", LEAGLY_SUMMONER_ICON)
+	embed = formatEmbedAuthorLeagly(embed, "League of Legends Patch Notes", BASE_ASSET_URL+Version+LEAGLY_SUMMONER_ICON)
 	embed = formatePatchNotesEmbed(embed, latestPatchNotes)
 	//get image
 	imgURLErr := GetPatchNotesImage(latestPatchNotes, version)
@@ -58,7 +60,7 @@ func PatchNotes() (*discordgo.MessageSend, error) {
 ///
 func RiotApiStatus(discordRegion string) *discordgo.MessageSend {
 	embed := formatRankedEmbed("", "a", "Status of league of legends api's", 16777215, time.Now())
-	embed = formatEmbedAuthorLeagly(embed, "Riot API Status", LEAGLY_SUMMONER_ICON)
+	embed = formatEmbedAuthorLeagly(embed, "Riot API Status", BASE_ASSET_URL+Version+LEAGLY_SUMMONER_ICON)
 	riotStatus := getRiotStatus(discordRegion)
 	langs := map[string]string{
 		"NA1":  "en_US",
@@ -83,7 +85,7 @@ func RiotApiStatus(discordRegion string) *discordgo.MessageSend {
 ///
 func GuildCount(numGuilds int) *discordgo.MessageSend {
 	embed := formatRankedEmbed("", "a", fmt.Sprintf("%d Discord servers have added Leagly", numGuilds), 16777215, time.Now())
-	embed = formatEmbedAuthorLeagly(embed, "Leagly Discord Server Count", LEAGLY_SUMMONER_ICON)
+	embed = formatEmbedAuthorLeagly(embed, "Leagly Discord Server Count", BASE_ASSET_URL+Version+LEAGLY_SUMMONER_ICON)
 	return createMessageSend(embed, []*discordgo.File{})
 }
 
@@ -101,7 +103,7 @@ func ErrorCreate(errMsg string) *discordgo.MessageSend {
 ///
 func UpTime(start_time time.Time) *discordgo.MessageSend {
 	embed := formatRankedEmbed("", "a", fmt.Sprintf("Leagly has been up since %s", start_time.Format(time.RFC1123)), 16777215, time.Now())
-	embed = formatEmbedAuthorLeagly(embed, "Leagly Bot Uptime", LEAGLY_SUMMONER_ICON)
+	embed = formatEmbedAuthorLeagly(embed, "Leagly Bot Uptime", BASE_ASSET_URL+Version+BASE_ASSET_URL+Version+LEAGLY_SUMMONER_ICON)
 	return createMessageSend(embed, []*discordgo.File{})
 }
 
@@ -109,8 +111,8 @@ func UpTime(start_time time.Time) *discordgo.MessageSend {
 /// [Join Leagly Discord](https://discord.gg/bxQRKA8D9g)\n
 ///
 func Help(discordRegion string, discorddPrefix string) *discordgo.MessageSend {
-	embed := formatRankedEmbed("", "a", "Leagly Bot v2.4.4\nHere is a list of the available commands for Leagly bot:", 16777215, time.Now())
-	embed = formatEmbedAuthorLeagly(embed, fmt.Sprintf("Leagly Bot. [%s] Region", discordRegion), LEAGLY_SUMMONER_ICON)
+	embed := formatRankedEmbed("", "a", "Leagly Bot v2.4.17\nHere is a list of the available commands for Leagly bot:", 16777215, time.Now())
+	embed = formatEmbedAuthorLeagly(embed, fmt.Sprintf("Leagly Bot. [%s] Region", discordRegion), BASE_ASSET_URL+Version+LEAGLY_SUMMONER_ICON)
 	embed = formatHelpEmbed(embed, discorddPrefix)
 	return createMessageSend(embed, []*discordgo.File{})
 }
@@ -275,32 +277,6 @@ func MasteryPlayer(playerName string, region string) (send *discordgo.MessageSen
 		return send, nil
 	}
 	return ErrorCreate(fmt.Sprintf("Could not find data for %s **[%s]**", playerName, region)), errors.New("account info was nil")
-}
-
-func InitEmojis(emoji [][]*discordgo.Emoji) {
-	emojis = emoji
-}
-
-// A champion object is created on program start up containing all the names of all the champions and their ID's. Use this method to retrieve a name by ID
-func GetChampion(champID string) string {
-	for k, v := range champ3 {
-		if champID == v.Key {
-			return k // K is the champion name
-		}
-	}
-	return champID
-}
-
-// An emoji object is created on program start up containing all the names and ID's of the emojis Leagly has access to.
-func GetEmoji(emojiName string) string {
-	for i := range emojis {
-		for x := range emojis[i] {
-			if emojis[i][x].Name == emojiName {
-				return emojis[i][x].ID
-			}
-		}
-	}
-	return ""
 }
 
 ///
@@ -865,10 +841,6 @@ func parseLiveParticipant(sumID string, liveGameInfo LiveGameInfo) LiveGameParti
 		}
 	}
 	return liveGameInfo.Participants[i]
-}
-
-func ParseVersion(version string) []string {
-	return strings.Split(version, ".")
 }
 
 func checkFileName(fileName string) string {

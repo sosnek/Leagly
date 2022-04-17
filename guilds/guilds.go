@@ -1,47 +1,34 @@
 package guilds
 
-import (
-	"log"
-)
-
 var DiscordGuilds []*DiscordGuild
 var MY_DISCORD_ID = "220732095083839488"
 
 type DiscordGuild struct {
-	ID      string
-	Region  string
-	Region2 string //americas, europe, asia
-	Prefix  string
+	ID             string
+	Region         string
+	Region2        string //americas, europe, asia
+	Prefix         string
+	AutoPatchNotes bool
+	PatchNotesCh   string
 }
 
-func GetGuildRegion(guildID string) string {
+func GetGuild(guildID string) *DiscordGuild {
 	for _, v := range DiscordGuilds {
 		if v.ID == guildID {
-			return v.Region
+			return v
 		}
 	}
-	log.Println("Could not find discord server ID: " + guildID + ". Defaulting to NA region")
-	return "NA1"
+	return nil
 }
 
-func GetGuildRegion2(guildID string) string {
+func GuildsWithAutoPatchNotes() []string {
+	var guildsWithAutoUpdates []string
 	for _, v := range DiscordGuilds {
-		if v.ID == guildID {
-			return v.Region2
+		if v.AutoPatchNotes {
+			guildsWithAutoUpdates = append(guildsWithAutoUpdates, v.PatchNotesCh)
 		}
 	}
-	log.Println("Could not find discord server ID: " + guildID + ". Defaulting to NA region")
-	return "americas"
-}
-
-func GetGuildPrefix(guildID string) string {
-	for _, v := range DiscordGuilds {
-		if v.ID == guildID {
-			return v.Prefix
-		}
-	}
-	log.Println("Could not find discord server ID: " + guildID + ". Defaulting to >> prefix")
-	return ">>"
+	return guildsWithAutoUpdates
 }
 
 func GetGuildCount() int {
