@@ -27,6 +27,22 @@ func createMessageSend(embed *discordgo.MessageEmbed, files []*discordgo.File) *
 	return send
 }
 
+func formatePatchNotesEmbed(embed *discordgo.MessageEmbed, patchnotesURL string) *discordgo.MessageEmbed {
+	embed.Fields = []*discordgo.MessageEmbedField{
+		{
+			Name:   "Current Patch",
+			Value:  "[This Patch](" + patchnotesURL + ")",
+			Inline: true,
+		},
+		{
+			Name:   "Past Updates",
+			Value:  "[Patch History](" + PATCH_NOTES_HISTORY_URL + ")",
+			Inline: true,
+		},
+	}
+	return embed
+}
+
 func formatApiStatusEmbed(embed *discordgo.MessageEmbed, riotStatus RiotStatus, lang string) *discordgo.MessageEmbed {
 	if len(riotStatus.Incidents) < 1 {
 		embed.Fields = []*discordgo.MessageEmbedField{

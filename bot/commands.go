@@ -184,7 +184,20 @@ func feedback(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
 		} else {
 			log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + guilds.GetGuildPrefix(m.GuildID) + "feedback")
 			s.ChannelMessageSend("955121671105286175", fmt.Sprintf("From %s, Feedback: %s ", m.Author.Username, args[1]))
+			s.ChannelMessageSend(m.ChannelID, "Message has been saved! Thank you for the feedback. :)")
 		}
+	}
+}
+
+func patchNotes(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
+	if len(args) < 2 {
+		s.ChannelTyping(m.ChannelID)
+		log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + guilds.GetGuildPrefix(m.GuildID) + "patchnotes")
+		send, err := query.PatchNotes()
+		if err != nil {
+			log.Println("Error: Discord server ID: " + m.GuildID + "  " + err.Error())
+		}
+		s.ChannelMessageSendComplex(m.ChannelID, send)
 	}
 }
 

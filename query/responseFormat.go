@@ -10,6 +10,7 @@ import (
 	"os"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/bwmarrin/discordgo"
@@ -32,8 +33,27 @@ const SMITE = 11
 const MATCH_LIMIT = 30
 const NUM_OF_RANK_GAMES = 10
 
-const LEAGLY_SUMMONER_ICON = "http://ddragon.leagueoflegends.com/cdn/12.4.1/img/profileicon/1630.png"
-const LEAGLY_ERROR_ICON = "https://imgur.com/YA2zxjj.png"
+func PatchNotes() (*discordgo.MessageSend, error) {
+	version := GetLeagueVersion()
+	versionNum := ParseVersion(version)
+	if len(versionNum) < 2 {
+		return ErrorCreate("Error getting patch notes."), errors.New("Could not parse version number")
+	}
+	latestPatchNotes := PATCH_NOTES_BASE_URL + versionNum[0] + "-" + versionNum[1] + "-notes/"
+	embed := formatRankedEmbed("", "a", fmt.Sprintf("League of Legends is on patch %s.%s", versionNum[0], versionNum[1]), 16777215, time.Now())
+	embed = formatEmbedAuthorLeagly(embed, "League of Legends Patch Notes", LEAGLY_SUMMONER_ICON)
+	embed = formatePatchNotesEmbed(embed, latestPatchNotes)
+	//get image
+	imgURLErr := GetPatchNotesImage(latestPatchNotes, version)
+	if imgURLErr != nil {
+		return createMessageSend(embed, []*discordgo.File{}), nil
+	}
+	files := formatEmbedImages([]string{}, "./patchNotes/", version+".png")
+	embed.Image = &discordgo.MessageEmbedImage{
+		URL: "attachment://" + version + ".png",
+	}
+	return createMessageSend(embed, files), nil
+}
 
 ///
 func RiotApiStatus(discordRegion string) *discordgo.MessageSend {
@@ -845,6 +865,10 @@ func parseLiveParticipant(sumID string, liveGameInfo LiveGameInfo) LiveGameParti
 		}
 	}
 	return liveGameInfo.Participants[i]
+}
+
+func ParseVersion(version string) []string {
+	return strings.Split(version, ".")
 }
 
 func checkFileName(fileName string) string {

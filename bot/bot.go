@@ -65,6 +65,7 @@ func Initialize(s *discordgo.Session) {
 	InitializeEmojis(s)
 	s.UpdateGameStatus(0, ">>help | @Leagly")
 	up_time = time.Now()
+	query.GetLeagueVersion()
 	go heartBeat(s)
 }
 
@@ -201,6 +202,10 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	if command == prefix+"status" {
 		status(s, m, args)
+	}
+
+	if command == prefix+"patchnotes" {
+		patchNotes(s, m, args)
 	}
 
 	for _, v := range m.Mentions {
