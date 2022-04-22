@@ -218,7 +218,7 @@ func patchNotes(s *discordgo.Session, m *discordgo.MessageCreate, args []string)
 			}
 		}
 	} else {
-		s.ChannelMessageSend(m.ChannelID, "Incorrect format. Patchnotes example: ```>>Patchnotes listen```")
+		s.ChannelMessageSend(m.ChannelID, "Incorrect format. Patchnotes example: ```>>Patchnotes toggle```")
 	}
 }
 

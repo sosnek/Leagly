@@ -470,14 +470,17 @@ func GetPatchNotesImage(url string, version string) error {
 	resp, err := http.Get(url)
 	if err != nil {
 		log.Println(err) //@@@@@@@@
+		return err
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode != 200 {
 		log.Println("Unable to get patchnotes URL with status code error: " + strconv.Itoa(resp.StatusCode) + resp.Status)
+		return errors.New("Unable to get patchnotes URL with status code error: " + strconv.Itoa(resp.StatusCode) + resp.Status)
 	}
 	htmlData, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		log.Println(err)
+		return err
 	}
 	return patchNotesImgRegex(htmlData, version)
 }

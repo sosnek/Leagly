@@ -44,7 +44,7 @@ func ConnectToDiscord() {
 		panic(err)
 	}
 	Initialize(leaglyBot)
-	fmt.Println("Leagly is now running")
+	log.Println("Leagly is now running")
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
 	<-sc

@@ -6,7 +6,7 @@ var MY_DISCORD_ID = "220732095083839488"
 type DiscordGuild struct {
 	ID             string
 	Region         string
-	Region2        string //americas, europe, asia
+	Region2        string
 	Prefix         string
 	AutoPatchNotes bool
 	PatchNotesCh   string
