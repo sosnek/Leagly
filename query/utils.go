@@ -110,6 +110,6 @@ func InitializeEmojis(s *discordgo.Session) {
 	emoji7, _ := s.GuildEmojis("938569677326671913")
 	emoji8, _ := s.GuildEmojis("938569400724910110")
 	emoji9, _ := s.GuildEmojis("946539173597302804")
-	emojis = append(emoji, emoji1, emoji2, emoji3, emoji4, emoji5, emoji6, emoji7, emoji8, emoji9)
+	emoji = append(emoji, emoji1, emoji2, emoji3, emoji4, emoji5, emoji6, emoji7, emoji8, emoji9)
 	emojis = emoji
 }
