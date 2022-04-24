@@ -32,6 +32,8 @@ func ConnectToDiscord() {
 		log.Println(err)
 		panic(err)
 	}
+
+	Initialize(leaglyBot)
 	leaglyBot.AddHandler(messageCreate)
 	leaglyBot.AddHandler(guildCreate)
 	leaglyBot.AddHandler(guildDelete)
@@ -43,7 +45,6 @@ func ConnectToDiscord() {
 		log.Println(err)
 		panic(err)
 	}
-	Initialize(leaglyBot)
 	log.Println("Leagly is now running")
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
@@ -57,34 +58,17 @@ func ConnectToDiscord() {
 ///
 func Initialize(s *discordgo.Session) {
 	err := query.InitializedChampStruct()
+	guilds.DB, err = guilds.SetupDB()
 	if err != nil {
 		panic(err)
 	}
 	query.CreateChampionRatesFile()
-	InitializeEmojis(s)
+	query.InitializeEmojis(s)
 	up_time = time.Now()
 	query.Version = query.GetLeagueVersion()
 	go query.UpdateVersionAsync(s)
 	go heartBeat(s)
 	s.UpdateGameStatus(0, ">>help | @Leagly")
-}
-
-///
-///
-///
-func InitializeEmojis(s *discordgo.Session) {
-	var emojis [][]*discordgo.Emoji
-	emoji, _ := s.GuildEmojis("937465588446539920")
-	emoji2, _ := s.GuildEmojis("937453232517693502")
-	emoji3, _ := s.GuildEmojis("937481122198200320")
-	emoji4, _ := s.GuildEmojis("937537071902503005")
-	emoji5, _ := s.GuildEmojis("937482778499485756")
-	emoji6, _ := s.GuildEmojis("938569984748163112")
-	emoji7, _ := s.GuildEmojis("938569677326671913")
-	emoji8, _ := s.GuildEmojis("938569400724910110")
-	emoji9, _ := s.GuildEmojis("946539173597302804")
-	emojis = append(emojis, emoji, emoji2, emoji3, emoji4, emoji5, emoji6, emoji7, emoji8, emoji9)
-	query.InitEmojis(emojis)
 }
 
 func heartBeat(s *discordgo.Session) {
@@ -104,16 +88,14 @@ func guildCreate(s *discordgo.Session, event *discordgo.GuildCreate) {
 		return
 	}
 
-	var exists bool
-	for i := 0; i < len(guilds.DiscordGuilds); i++ {
-		if event.ID == guilds.DiscordGuilds[i].ID {
-			//log.Println("Guild ID:" + event.Guild.ID + ". Name: " + event.Guild.Name + " Already exists. Num of users in guild: " + strconv.Itoa(event.Guild.MemberCount))
-			exists = true
+	_, err := guilds.View(guilds.DB, event.ID)
+	if err != nil { //expect an error if the guild already exists in db
+		err = guilds.Add(guilds.DB, event.ID, guilds.DiscordGuild{ID: event.ID, Region: "NA1", Region2: "americas", Prefix: ">>"})
+		if err == nil {
+			log.Println("Added guild ID:" + event.Guild.ID + ". Name: " + event.Guild.Name + " Num of users in guild: " + strconv.Itoa(event.Guild.MemberCount))
+		} else {
+			log.Println(err)
 		}
-	}
-	if !exists {
-		guilds.DiscordGuilds = append(guilds.DiscordGuilds, &guilds.DiscordGuild{ID: event.ID, Region: "NA1", Region2: "americas", Prefix: ">>"})
-		log.Println("Added guild ID:" + event.Guild.ID + ". Name: " + event.Guild.Name + " Num of users in guild: " + strconv.Itoa(event.Guild.MemberCount))
 	}
 }
 
@@ -122,12 +104,15 @@ func guildDelete(bot *discordgo.Session, event *discordgo.GuildDelete) {
 		return
 	}
 
-	for i := 0; i < len(guilds.DiscordGuilds); i++ {
-		if event.ID == guilds.DiscordGuilds[i].ID {
-			log.Println("Guild ID:" + event.Guild.ID + ". Name: " + event.Guild.Name + " has removed Leagly.")
-			guilds.DiscordGuilds[i] = guilds.DiscordGuilds[len(guilds.DiscordGuilds)-1]
-			guilds.DiscordGuilds = guilds.DiscordGuilds[:len(guilds.DiscordGuilds)-1]
-			return
+	_, err := guilds.View(guilds.DB, event.ID)
+	if err != nil {
+		log.Println(err)
+	} else {
+		err = guilds.Delete(guilds.DB, event.ID)
+		if err == nil {
+			log.Println("Guild ID:" + event.Guild.ID + " Has removed Leagly")
+		} else {
+			log.Println(err)
 		}
 	}
 }
@@ -145,51 +130,51 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if len(args) < 1 {
 		return
 	}
-	guild := guilds.GetGuild(m.GuildID)
+	guild, err := guilds.View(guilds.DB, m.GuildID)
+	if err != nil {
+		log.Println(err)
+		return
+	}
 	prefix := strings.ToLower(guild.Prefix)
-
 	command := strings.ToLower(args[0])
-	// !help
+
 	if command == prefix+"help" {
-		handleHelp(s, m)
+		handleHelp(s, m, guild)
 		return
 	}
 
-	// !prefix
 	if command == prefix+"region" {
-		changeRegion(s, m, args)
+		changeRegion(s, m, args, guild)
 		return
 	}
 
-	// !live - checks if player is currently in a game
 	if command == prefix+"live" {
-		live(s, m, args)
+		live(s, m, args, guild)
 		return
 	}
 
-	// !lastmatch - Searches and displays stats from last league game played
 	if command == prefix+"lastmatch" {
-		lastmatch(s, m, args)
+		lastmatch(s, m, args, guild)
 		return
 	}
 
 	if command == prefix+"lookup" {
-		lookup(s, m, args)
+		lookup(s, m, args, guild)
 		return
 	}
 
 	if command == prefix+"mastery" {
-		mastery(s, m, args)
+		mastery(s, m, args, guild)
 		return
 	}
 
 	if command == prefix+"prefix" {
-		changePrefix(s, m, args)
+		changePrefix(s, m, args, guild)
 		return
 	}
 
 	if command == prefix+"uptime" {
-		uptime(s, m, args)
+		uptime(s, m, args, guild)
 		return
 	}
 
@@ -198,20 +183,20 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 
 	if command == prefix+"feedback" {
-		feedback(s, m, args)
+		feedback(s, m, args, guild)
 	}
 
 	if command == prefix+"status" {
-		status(s, m, args)
+		status(s, m, args, guild)
 	}
 
 	if command == prefix+"patchnotes" {
-		patchNotes(s, m, args)
+		patchNotes(s, m, args, guild)
 	}
 
 	for _, v := range m.Mentions {
 		if v.ID == s.State.User.ID {
-			handleHelp(s, m)
+			handleHelp(s, m, guild)
 		}
 	}
 }
