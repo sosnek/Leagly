@@ -37,10 +37,6 @@ func UpdateVersionAsync(s *discordgo.Session) {
 	}
 }
 
-func InitEmojis(emoji [][]*discordgo.Emoji) {
-	emojis = emoji
-}
-
 // A champion object is created on program start up containing all the names of all the champions and their ID's. Use this method to retrieve a name by ID
 func GetChampion(champID string) string {
 	for k, v := range champ3 {
@@ -98,4 +94,22 @@ func patchNotesImgRegex(html []byte, version string) error {
 		}
 	}
 	return nil
+}
+
+///
+///
+///
+func InitializeEmojis(s *discordgo.Session) {
+	var emoji [][]*discordgo.Emoji
+	emoji1, _ := s.GuildEmojis("937465588446539920")
+	emoji2, _ := s.GuildEmojis("937453232517693502")
+	emoji3, _ := s.GuildEmojis("937481122198200320")
+	emoji4, _ := s.GuildEmojis("937537071902503005")
+	emoji5, _ := s.GuildEmojis("937482778499485756")
+	emoji6, _ := s.GuildEmojis("938569984748163112")
+	emoji7, _ := s.GuildEmojis("938569677326671913")
+	emoji8, _ := s.GuildEmojis("938569400724910110")
+	emoji9, _ := s.GuildEmojis("946539173597302804")
+	emojis = append(emoji, emoji1, emoji2, emoji3, emoji4, emoji5, emoji6, emoji7, emoji8, emoji9)
+	emojis = emoji
 }
