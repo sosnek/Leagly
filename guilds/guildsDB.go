@@ -17,7 +17,7 @@ type DiscordGuild struct {
 	Region2        string
 	Prefix         string
 	AutoPatchNotes bool
-	PatchNotesCh   string
+	PatchNotesCh   []byte
 }
 
 func SetupDB() (*bolt.DB, error) {
@@ -89,10 +89,10 @@ func Delete(db *bolt.DB, key string) error {
 	return err
 }
 
-func GuildsWithAutoPatchNotes() []string {
-	var patchNoteChannels []string
+func GuildsWithAutoPatchNotes() [][]byte {
+	var patchNoteChannels [][]byte
 	DB.View(func(tx *bolt.Tx) error {
-		b := tx.Bucket([]byte("DB"))
+		b := tx.Bucket([]byte("Guilds"))
 		b.ForEach(func(k, v []byte) error {
 			var tmp DiscordGuild
 			err := json.Unmarshal(v, &tmp)

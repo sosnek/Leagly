@@ -1,6 +1,7 @@
 package bot
 
 import (
+	"Leagly/config"
 	"Leagly/guilds"
 	"Leagly/query"
 	"fmt"
@@ -203,9 +204,15 @@ func patchNotes(s *discordgo.Session, m *discordgo.MessageCreate, args []string,
 	} else if len(args) == 2 {
 		if args[1] == "toggle" {
 			guild.AutoPatchNotes = !guild.AutoPatchNotes
-			guild.PatchNotesCh = m.ChannelID
 
-			err := guilds.Update(guilds.DB, guild.ID, guild)
+			PatchNotesCh, err := query.Encrypt([]byte(m.ChannelID), []byte(config.EncryptionKey))
+			if err != nil {
+				log.Println(err)
+				return
+			}
+			guild.PatchNotesCh = PatchNotesCh
+
+			err = guilds.Update(guilds.DB, guild.ID, guild)
 			if err != nil {
 				log.Println(err)
 				return

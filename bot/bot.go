@@ -1,7 +1,7 @@
 package bot
 
 import (
-	"Leagly/config" //importing our config package which we have created above
+	"Leagly/config"
 	"Leagly/guilds"
 	"Leagly/query"
 	"fmt" //to print errors
@@ -130,6 +130,11 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	if len(args) < 1 {
 		return
 	}
+
+	if !containsValidCommand(messageContent) {
+		return //don't exhaust db search if message doesnt involve valid command
+	}
+
 	guild, err := guilds.View(guilds.DB, m.GuildID)
 	if err != nil {
 		log.Println(err)
@@ -199,4 +204,14 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 			handleHelp(s, m, guild)
 		}
 	}
+}
+
+func containsValidCommand(msg string) bool {
+	roles := []string{"help", "region", "live", "lastmatch", "lookup", "mastery", "prefix", "uptime", "gc", "feedback", "status", "patchnotes"}
+	for i := 0; i < len(roles); i++ {
+		if strings.Contains(msg, roles[i]) {
+			return true
+		}
+	}
+	return false
 }

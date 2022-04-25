@@ -1,6 +1,5 @@
 {
 	"Token"  : "",
-	"BotPrefix" : "!",
-	"Region" : "NA",
+	"encryptionKey" : "",
 	"ApiKey" : ""
 }

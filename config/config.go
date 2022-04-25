@@ -8,19 +8,17 @@ import (
 )
 
 var (
-	Token     string //To store value of Token from config.json .
-	BotPrefix string // To store value of BotPrefix from config.json.
-	Region    string
-	ApiKey    string
+	Token         string //To store value of Token from config.json .
+	EncryptionKey string // To store value of BotPrefix from config.json.
+	ApiKey        string
 
 	config *configStruct //To store value extracted from config.json.
 )
 
 type configStruct struct {
-	Token     string `json : "Token"`
-	BotPrefix string `json : "BotPrefix"`
-	Region    string `json : "Region"`
-	ApiKey    string `json : "ApiKey"`
+	Token         string `json : "Token"`
+	EncryptionKey string `json : "encryptionKey"`
+	ApiKey        string `json : "ApiKey"`
 }
 
 func ReadConfig() error {
@@ -41,8 +39,7 @@ func ReadConfig() error {
 	}
 
 	Token = config.Token
-	BotPrefix = config.BotPrefix
-	Region = config.Region
+	EncryptionKey = config.EncryptionKey
 	ApiKey = config.ApiKey
 
 	if Token == "" {
@@ -50,6 +47,9 @@ func ReadConfig() error {
 	}
 	if ApiKey == "" {
 		ApiKey = os.Getenv("RiotKey")
+	}
+	if EncryptionKey == "" {
+		ApiKey = os.Getenv("EncryptionKey")
 	}
 
 	return nil

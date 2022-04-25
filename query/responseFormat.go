@@ -129,7 +129,6 @@ func IsInGame(playerName string, region string) (send *discordgo.MessageSend, er
 			return ErrorCreate(fmt.Sprintf("Could not find data for %s **[%s]**", playerName, region)), errors.New("liveGameInfo was nil")
 		}
 		if liveGameInfo.Status.Status_code == 0 {
-
 			liveGameInfo.Participants = determineRoles(liveGameInfo.Participants)
 			getTime := time.Now().UTC()
 			elapsed := getTime.Sub(time.Unix(int64((liveGameInfo.GameStartTime / 1000)), 0).UTC())
@@ -141,7 +140,7 @@ func IsInGame(playerName string, region string) (send *discordgo.MessageSend, er
 			bannedChampions := getBannedChampsID(liveGameInfo.BannedChampions)
 			champion := GetChampion(strconv.Itoa(participant.ChampionId))
 			err = getChampionFile(champion + ".png")
-			if err != nil {
+			if err != nil { //champion file doesn't exist locally and unable to download it.
 				return ErrorCreate(fmt.Sprintf("Could not find data for %s **[%s]**", playerName, region)), errors.New("getChampionFile Error : " + err.Error())
 			}
 
