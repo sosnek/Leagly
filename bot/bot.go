@@ -90,7 +90,7 @@ func guildCreate(s *discordgo.Session, event *discordgo.GuildCreate) {
 
 	_, err := guilds.View(guilds.DB, event.ID)
 	if err != nil { //expect an error if the guild already exists in db
-		err = guilds.Add(guilds.DB, event.ID, guilds.DiscordGuild{ID: event.ID, Region: "NA1", Region2: "americas", Prefix: ">>"})
+		err = guilds.Add(guilds.DB, event.ID, guilds.DiscordGuild{ID: event.ID, Region: "NA1", Region2: "americas", Prefix: ">>", Members: event.Guild.MemberCount})
 		if err == nil {
 			log.Println("Added guild ID:" + event.Guild.ID + ". Name: " + event.Guild.Name + " Num of users in guild: " + strconv.Itoa(event.Guild.MemberCount))
 		} else {

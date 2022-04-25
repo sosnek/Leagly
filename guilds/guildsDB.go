@@ -18,6 +18,7 @@ type DiscordGuild struct {
 	Prefix         string
 	AutoPatchNotes bool
 	PatchNotesCh   []byte
+	Members        int
 }
 
 func SetupDB() (*bolt.DB, error) {
