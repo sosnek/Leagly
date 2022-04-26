@@ -103,7 +103,7 @@ func ErrorCreate(errMsg string) *discordgo.MessageSend {
 ///
 func UpTime(start_time time.Time) *discordgo.MessageSend {
 	embed := formatRankedEmbed("", "a", fmt.Sprintf("Leagly has been up since %s", start_time.Format(time.RFC1123)), 16777215, time.Now())
-	embed = formatEmbedAuthorLeagly(embed, "Leagly Bot Uptime", BASE_ASSET_URL+Version+BASE_ASSET_URL+Version+LEAGLY_SUMMONER_ICON)
+	embed = formatEmbedAuthorLeagly(embed, "Leagly Bot Uptime", BASE_ASSET_URL+Version+LEAGLY_SUMMONER_ICON)
 	return createMessageSend(embed, []*discordgo.File{})
 }
 
