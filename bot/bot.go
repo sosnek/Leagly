@@ -69,7 +69,7 @@ func Initialize() {
 
 func InitializeExtra(s *discordgo.Session) {
 	//s.UpdateGameStatus(0, "TEST")
-	s.UpdateListeningStatus("Riot API's")
+	s.UpdateListeningStatus(">>help")
 	query.InitializeEmojis(s)
 	query.Version = query.GetLeagueVersion()
 	go query.UpdateVersionAsync(s)

@@ -203,8 +203,8 @@ func patchNotes(s *discordgo.Session, m *discordgo.MessageCreate, args []string,
 		s.ChannelMessageSendComplex(m.ChannelID, send)
 	} else if len(args) == 2 {
 		if args[1] == "toggle" {
+			log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + guild.Prefix + "patchnotes toggle")
 			guild.AutoPatchNotes = !guild.AutoPatchNotes
-
 			PatchNotesCh, err := query.Encrypt([]byte(m.ChannelID), []byte(config.EncryptionKey))
 			if err != nil {
 				log.Println(err)
@@ -217,12 +217,13 @@ func patchNotes(s *discordgo.Session, m *discordgo.MessageCreate, args []string,
 				log.Println(err)
 				return
 			}
-			log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + guild.Prefix + "patchnotes toggle " + strconv.FormatBool(guild.AutoPatchNotes))
+
 			if guild.AutoPatchNotes {
 				s.ChannelMessageSend(m.ChannelID, "Auto patch notes have been enabled")
 			} else {
 				s.ChannelMessageSend(m.ChannelID, "Auto patch notes have been disabled")
 			}
+			log.Println("Discord server ID: " + m.GuildID + " auto patchnotes have been set to " + strconv.FormatBool(guild.AutoPatchNotes))
 		}
 	} else {
 		s.ChannelMessageSend(m.ChannelID, "Incorrect format. Patchnotes example: ```>>Patchnotes toggle```")
