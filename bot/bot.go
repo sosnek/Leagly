@@ -33,7 +33,7 @@ func ConnectToDiscord() {
 		panic(err)
 	}
 
-	Initialize(leaglyBot)
+	Initialize()
 	leaglyBot.AddHandler(messageCreate)
 	leaglyBot.AddHandler(guildCreate)
 	leaglyBot.AddHandler(guildDelete)
@@ -45,6 +45,7 @@ func ConnectToDiscord() {
 		log.Println(err)
 		panic(err)
 	}
+	InitializeExtra(leaglyBot)
 	log.Println("Leagly is now running")
 	sc := make(chan os.Signal, 1)
 	signal.Notify(sc, syscall.SIGINT, syscall.SIGTERM, os.Interrupt, os.Kill)
@@ -56,19 +57,23 @@ func ConnectToDiscord() {
 ///
 ///
 ///
-func Initialize(s *discordgo.Session) {
+func Initialize() {
 	err := query.InitializedChampStruct()
 	guilds.DB, err = guilds.SetupDB()
 	if err != nil {
 		panic(err)
 	}
 	query.CreateChampionRatesFile()
-	query.InitializeEmojis(s)
 	up_time = time.Now()
+}
+
+func InitializeExtra(s *discordgo.Session) {
+	//s.UpdateGameStatus(0, "TEST")
+	s.UpdateListeningStatus("Riot API's")
+	query.InitializeEmojis(s)
 	query.Version = query.GetLeagueVersion()
 	go query.UpdateVersionAsync(s)
 	go heartBeat(s)
-	s.UpdateGameStatus(0, ">>help | @Leagly")
 }
 
 func heartBeat(s *discordgo.Session) {
@@ -197,12 +202,6 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	if command == prefix+"patchnotes" {
 		patchNotes(s, m, args, guild)
-	}
-
-	for _, v := range m.Mentions {
-		if v.ID == s.State.User.ID {
-			handleHelp(s, m, guild)
-		}
 	}
 }
 
