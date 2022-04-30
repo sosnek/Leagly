@@ -341,7 +341,7 @@ func determineRoleByChampionPR(liveGameParticipants []LiveGameParticipants) []Li
 				if len(liveGameParticipants[k].championRole.skipRole) > 4 {
 					log.Println("Sanity check failed!")
 				}
-				if n > 5 {
+				if n > 4 {
 					continue //temp fix until i rewrite this entire method
 				}
 				if liveGameParticipants[k].championRole.skipRole[m] == roles[n] {
