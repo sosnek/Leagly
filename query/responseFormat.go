@@ -133,6 +133,9 @@ func IsInGame(playerName string, region string) (send *discordgo.MessageSend, er
 			getTime := time.Now().UTC()
 			elapsed := getTime.Sub(time.Unix(int64((liveGameInfo.GameStartTime / 1000)), 0).UTC())
 			Gametime := fmt.Sprintf("%02d:%02d", (int(elapsed.Seconds()) / 60), (int(elapsed.Seconds()) % 60))
+			if liveGameInfo.GameStartTime == 0 {
+				Gametime = "0"
+			}
 
 			participant := parseLiveParticipant(accInfo.Id, liveGameInfo)
 			rankPlayers := formatRankedPlayers(liveGameInfo, region)
@@ -337,6 +340,9 @@ func determineRoleByChampionPR(liveGameParticipants []LiveGameParticipants) []Li
 			for m := 0; m < len(liveGameParticipants[k].championRole.skipRole); m++ {
 				if len(liveGameParticipants[k].championRole.skipRole) > 4 {
 					log.Println("Sanity check failed!")
+				}
+				if n > 5 {
+					continue //temp fix until i rewrite this entire method
 				}
 				if liveGameParticipants[k].championRole.skipRole[m] == roles[n] {
 					n++
