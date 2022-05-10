@@ -50,7 +50,7 @@ func PatchNotes() (*discordgo.MessageSend, error) {
 	if imgURLErr != nil {
 		return createMessageSend(embed, []*discordgo.File{}), nil
 	}
-	files := formatEmbedImages([]string{}, "./patchNote3s/", version+".png")
+	files := formatEmbedImages([]string{}, "./patchNotes/", version+".png")
 	embed.Image = &discordgo.MessageEmbedImage{
 		URL: "attachment://" + version + ".png",
 	}
