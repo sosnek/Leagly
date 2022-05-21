@@ -236,6 +236,12 @@ func sendDiscordMessageComplex(s *discordgo.Session, m *discordgo.MessageCreate,
 	if err != nil {
 		log.Println("Error sending embed. Discord server ID: " + m.GuildID + "  " + err.Error())
 	}
+	//until aug 21, send one action items to discord servers asking to update permissions
+	_, err = s.GuildApplicationCommandsPermissions(s.State.User.ID, m.GuildID)
+	if err != nil {
+		s.ChannelMessageSendComplex(m.ChannelID, query.ApplicationCommandsWarningAction(m.GuildID))
+		log.Println("application.commands scope not enabled. Discord server ID: " + m.GuildID)
+	}
 }
 
 func onCoolDown(user string, cd float64) float64 {

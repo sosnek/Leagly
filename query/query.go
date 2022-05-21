@@ -187,6 +187,7 @@ const CHAMP_DATA = "/data/en_US/champion.json"
 const CHAMP_ICONS = "/img/champion/"
 const LEAGLY_SUMMONER_ICON = "/img/profileicon/1630.png"
 const LEAGLY_ERROR_ICON = "https://imgur.com/YA2zxjj.png"
+const LEAGLY_WARNING_ICON = "https://i.imgur.com/WnTB40m.png"
 const PATCH_NOTES_BASE_URL = "https://www.leagueoflegends.com/en-us/news/game-updates/patch-"
 const PATCH_NOTES_HISTORY_URL = "https://www.leagueoflegends.com/en-us/news/tags/patch-notes/"
 

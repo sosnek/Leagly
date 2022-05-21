@@ -423,7 +423,7 @@ func formatEmbedAuthorLeagly(embed *discordgo.MessageEmbed, name string, iconUrl
 	embed.Author = &discordgo.MessageEmbedAuthor{
 		Name:    name,
 		IconURL: iconUrl,
-		URL:     "https://discord.com/oauth2/authorize?client_id=930924283599925260&permissions=1074056192&scope=bot",
+		URL:     "https://discord.com/api/oauth2/authorize?client_id=930924283599925260&permissions=2147798016&scope=bot%20applications.commands",
 	}
 	return embed
 }
