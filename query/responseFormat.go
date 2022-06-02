@@ -1,6 +1,7 @@
 package query
 
 import (
+	"Leagly/guilds"
 	"errors"
 	"fmt"
 	"image"
@@ -92,6 +93,15 @@ func GuildCount(numGuilds int) *discordgo.MessageSend {
 ///
 ///
 ///
+func GuildDebugInfo(guild guilds.DiscordGuild) *discordgo.MessageSend {
+	embed := formatRankedEmbed("", "a", fmt.Sprintf("Prefix: %s\n Region: %s\n Join date: %s\n Autopatchnotes Enabled: %t\n Members: %d", guild.Prefix, guild.Region, guild.JoinDate, guild.AutoPatchNotes, guild.Members), 16777215, time.Now())
+	embed = formatEmbedAuthorLeagly(embed, fmt.Sprintf("Guild Info for: %s", guild.ID), BASE_ASSET_URL+Version+LEAGLY_SUMMONER_ICON)
+	return createMessageSend(embed, []*discordgo.File{})
+}
+
+///
+///
+///
 func ErrorCreate(errMsg string) *discordgo.MessageSend {
 	embed := formatRankedEmbed("", "a", errMsg, 16777215, time.Now())
 	embed = formatEmbedAuthorLeagly(embed, "Leagly Bot Error", LEAGLY_ERROR_ICON)
@@ -104,7 +114,7 @@ func ErrorCreate(errMsg string) *discordgo.MessageSend {
 func ApplicationCommandsWarningAction(Guid string) *discordgo.MessageSend { //  //dev : https://discord.com/api/oauth2/authorize?client_id=936378357657006161&permissions=2147798016&scope=bot%20applications.commands&guild_id=
 	OAuthApplicationCommands := "[Add Slash commands permissions](https://discord.com/api/oauth2/authorize?client_id=930924283599925260&permissions=2147798016&scope=bot%20applications.commands&guild_id=" + Guid + ")"
 	embed := formatRankedEmbed("", "a", "Leagly will eventually be moving over to slash commands as required by many discord bots. Please enable the new permissions required for this by clicking the link below.\n\n"+OAuthApplicationCommands, 16777215, time.Now())
-	embed = formatEmbedAuthorLeagly(embed, "Action Required!", LEAGLY_WARNING_ICON) //cahgen icon
+	embed = formatEmbedAuthorLeagly(embed, "Action Required!", LEAGLY_WARNING_ICON)
 	return createMessageSend(embed, []*discordgo.File{})
 }
 
@@ -121,7 +131,7 @@ func UpTime(start_time time.Time) *discordgo.MessageSend {
 /// [Join Leagly Discord](https://discord.gg/bxQRKA8D9g)\n
 ///
 func Help(discordRegion string, discorddPrefix string) *discordgo.MessageSend {
-	embed := formatRankedEmbed("", "a", "Leagly Bot v2.5.21\nHere is a list of the available commands for Leagly bot:", 16777215, time.Now())
+	embed := formatRankedEmbed("", "a", "Leagly Bot v2.6.1\nHere is a list of the available commands for Leagly bot:", 16777215, time.Now())
 	embed = formatEmbedAuthorLeagly(embed, fmt.Sprintf("Leagly Bot. [%s] Region", discordRegion), BASE_ASSET_URL+Version+LEAGLY_SUMMONER_ICON)
 	embed = formatHelpEmbed(embed, discorddPrefix)
 	return createMessageSend(embed, []*discordgo.File{})

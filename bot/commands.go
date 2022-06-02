@@ -179,6 +179,19 @@ func getGuildCount(s *discordgo.Session, m *discordgo.MessageCreate) {
 	}
 }
 
+func getGuildDebugInfo(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
+	if guilds.HasDebugPermissions(m.Author.ID) {
+		if validateName(args) {
+			guild, err := guilds.View(guilds.DB, args[1])
+			if err != nil {
+				log.Println(err)
+			} else {
+				sendDiscordMessageComplex(s, m, query.GuildDebugInfo(guild))
+			}
+		}
+	}
+}
+
 func feedback(s *discordgo.Session, m *discordgo.MessageCreate, args []string, guild guilds.DiscordGuild) {
 	if validateName(args) {
 		if onCoolDown(m.Author.ID, 30) > 0 {

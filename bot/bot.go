@@ -110,7 +110,7 @@ func guildCreate(s *discordgo.Session, event *discordgo.GuildCreate) {
 
 	_, err := guilds.View(guilds.DB, event.ID)
 	if err != nil { //expect an error if the guild already exists in db
-		err = guilds.Add(guilds.DB, event.ID, guilds.DiscordGuild{ID: event.ID, Region: "NA1", Region2: "americas", Prefix: ">>", Members: event.Guild.MemberCount})
+		err = guilds.Add(guilds.DB, event.ID, guilds.DiscordGuild{ID: event.ID, Region: "NA1", Region2: "americas", Prefix: ">>", Members: event.Guild.MemberCount, JoinDate: time.Now().Format(time.RFC3339)})
 		if err == nil {
 			log.Println("Added guild ID:" + event.Guild.ID + ". Name: " + event.Guild.Name + " Num of users in guild: " + strconv.Itoa(event.Guild.MemberCount))
 		} else {
@@ -207,6 +207,10 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 		getGuildCount(s, m)
 	}
 
+	if command == prefix+"who" {
+		getGuildDebugInfo(s, m, args)
+	}
+
 	if command == prefix+"feedback" {
 		feedback(s, m, args, guild)
 	}
@@ -221,7 +225,7 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 }
 
 func containsValidCommand(msg string) bool {
-	roles := []string{"help", "region", "live", "lastmatch", "lookup", "mastery", "prefix", "uptime", "gc", "feedback", "status", "patchnotes"}
+	roles := []string{"help", "region", "live", "lastmatch", "lookup", "mastery", "prefix", "uptime", "gc", "feedback", "status", "patchnotes", "who"}
 	for i := 0; i < len(roles); i++ {
 		if strings.Contains(msg, roles[i]) {
 			return true

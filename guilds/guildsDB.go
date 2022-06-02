@@ -16,6 +16,7 @@ type DiscordGuild struct {
 	Region         string
 	Region2        string
 	Prefix         string
+	JoinDate       string
 	AutoPatchNotes bool
 	PatchNotesCh   []byte
 	Members        int
