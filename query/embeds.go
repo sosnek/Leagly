@@ -20,10 +20,9 @@ func getEmbedColour(hasWon bool) int {
 ///
 ///
 func createMessageSend(embed *discordgo.MessageEmbed, files []*discordgo.File) *discordgo.MessageSend {
-	embeds := []*discordgo.MessageEmbed{embed}
 	send := &discordgo.MessageSend{
-		Embeds: embeds,
-		Files:  files,
+		Embed: embed,
+		Files: files,
 	}
 	return send
 }

@@ -20,7 +20,7 @@ type DiscordGuild struct {
 	AutoPatchNotes bool
 	PatchNotesCh   []byte
 	Members        int
-} //add more stats like # of commands used etc
+}
 
 func SetupDB() (*bolt.DB, error) {
 	db, err := bolt.Open("leagly.db", 0600, nil)

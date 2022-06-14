@@ -3,7 +3,8 @@ package bot
 import (
 	"Leagly/config"
 	"Leagly/guilds"
-	"Leagly/query" //to print errors
+	"Leagly/query"
+	"fmt" //to print errors
 	"log"
 	"os"
 	"os/signal"
@@ -36,7 +37,6 @@ func ConnectToDiscord() {
 	leaglyBot.AddHandler(messageCreate)
 	leaglyBot.AddHandler(guildCreate)
 	leaglyBot.AddHandler(guildDelete)
-	leaglyBot.AddHandler(slashCommands)
 
 	leaglyBot.Identify.Intents = discordgo.IntentsGuilds | discordgo.IntentsGuildMessages
 
@@ -68,11 +68,39 @@ func Initialize() {
 }
 
 func InitializeExtra(s *discordgo.Session) {
-	RegisterCommands(s)
+	//RegisterLiveCommand(s)
 	s.UpdateListeningStatus(">>help")
 	query.InitializeEmojis(s)
 	query.Version = query.GetLeagueVersion()
 	go query.UpdateVersionAsync(s)
+	//go heartBeat(s)
+}
+
+func heartBeat(s *discordgo.Session) {
+	uptimeTicker := time.NewTicker(60 * time.Second)
+	counter := 0
+	for {
+		select {
+		case <-uptimeTicker.C:
+			counter++
+			s.ChannelMessageSend("962149630815137832", fmt.Sprintf("```Heartbeat counter %d. time : %s```", counter, time.Now()))
+		}
+	}
+}
+
+func RegisterLiveCommand(s *discordgo.Session) {
+	command := &discordgo.ApplicationCommand{
+		Name:        "live",
+		Type:        discordgo.ChatApplicationCommand,
+		Description: "Live match lookup",
+	}
+	create, err := s.ApplicationCommandCreate(s.State.User.ID, "938569984748163112", command)
+	if err != nil {
+		fmt.Println("Could not register command")
+		return
+	}
+	fmt.Println("Registered command:  " + create.Name)
+	//https://discord.com/api/oauth2/authorize?client_id=930924283599925260&permissions=2147798016&scope=bot%20applications.commands&guild_id=942085175347642398
 }
 
 func guildCreate(s *discordgo.Session, event *discordgo.GuildCreate) {
@@ -109,30 +137,6 @@ func guildDelete(bot *discordgo.Session, event *discordgo.GuildDelete) {
 	}
 }
 
-type Status struct {
-	Message     string
-	Status_code int
-}
-
-func slashCommands(s *discordgo.Session, event *discordgo.InteractionCreate) {
-	if event.Type != discordgo.InteractionApplicationCommand {
-		return
-	}
-	guild, err := guilds.View(guilds.DB, event.GuildID)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	data := event.ApplicationCommandData()
-	switch data.Name {
-	case "region":
-		value := data.Options[0].StringValue()
-		changeRegion(s, event, value, guild)
-	case "help":
-		handleHelp(s, event, guild)
-	}
-}
-
 func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 
 	messageContent := m.Content
@@ -160,12 +164,12 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	command := strings.ToLower(args[0])
 
 	if command == prefix+"help" {
-		//handleHelp(s, m, guild)
+		handleHelp(s, m, guild)
 		return
 	}
 
 	if command == prefix+"region" {
-		//changeRegion(s, m, args, guild)
+		changeRegion(s, m, args, guild)
 		return
 	}
 

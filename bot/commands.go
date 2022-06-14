@@ -13,88 +13,6 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-func RegisterCommands(s *discordgo.Session) {
-	var commands []*discordgo.ApplicationCommand
-	commands = append(commands, RegisterRegionCommand(s), RegisterHelpCommand(s))
-	//command = append(commands, register....)
-
-	_, err := s.ApplicationCommandBulkOverwrite(s.State.User.ID, "978768514909368351", commands)
-
-	if err != nil {
-		panic("Could not register commands")
-	}
-}
-
-func RegisterHelpCommand(s *discordgo.Session) *discordgo.ApplicationCommand {
-	command := &discordgo.ApplicationCommand{
-		Name:        "help",
-		Description: "Help command from leagly",
-	}
-	return command
-}
-
-func RegisterRegionCommand(s *discordgo.Session) *discordgo.ApplicationCommand {
-	command := &discordgo.ApplicationCommand{
-		Name:        "region",
-		Description: "Set the region for your discord server",
-		Options: []*discordgo.ApplicationCommandOption{
-			{
-				Type:        discordgo.ApplicationCommandOptionString,
-				Name:        "code",
-				Description: "Region Code",
-				Choices: []*discordgo.ApplicationCommandOptionChoice{
-					{
-						Name:  "North America",
-						Value: "NA1",
-					},
-					{
-						Name:  "Brazil",
-						Value: "BR1",
-					},
-					{
-						Name:  "Europe North",
-						Value: "EUN1",
-					},
-					{
-						Name:  "Europe West",
-						Value: "EUW1",
-					},
-					{
-						Name:  "Japan",
-						Value: "JP1",
-					},
-					{
-						Name:  "Korea",
-						Value: "KR",
-					},
-					{
-						Name:  "Latin America 1",
-						Value: "LA1",
-					},
-					{
-						Name:  "Latin America 2",
-						Value: "LA2",
-					},
-					{
-						Name:  "Oceania",
-						Value: "OC1",
-					},
-					{
-						Name:  "East Europe",
-						Value: "RU",
-					},
-					{
-						Name:  "Turkey",
-						Value: "TR1",
-					},
-				},
-				Required: true,
-			},
-		},
-	}
-	return command
-}
-
 func live(s *discordgo.Session, m *discordgo.MessageCreate, args []string, guild guilds.DiscordGuild) {
 	if validateName(args) {
 		s.ChannelTyping(m.ChannelID)
@@ -111,7 +29,7 @@ func live(s *discordgo.Session, m *discordgo.MessageCreate, args []string, guild
 		sendDiscordMessageComplex(s, m, send)
 	} else {
 		s.ChannelMessageSend(m.ChannelID, "Please follow the command format!")
-		//handleHelp(s, m, guild)
+		handleHelp(s, m, guild)
 	}
 }
 
@@ -126,7 +44,7 @@ func lastmatch(s *discordgo.Session, m *discordgo.MessageCreate, args []string, 
 		sendDiscordMessageComplex(s, m, send)
 	} else {
 		s.ChannelMessageSend(m.ChannelID, "Please follow the command format!")
-		//handleHelp(s, m, guild)
+		handleHelp(s, m, guild)
 	}
 }
 
@@ -146,7 +64,7 @@ func lookup(s *discordgo.Session, m *discordgo.MessageCreate, args []string, gui
 		sendDiscordMessageComplex(s, m, send)
 	} else {
 		s.ChannelMessageSend(m.ChannelID, "Please follow the command format!")
-		//handleHelp(s, m, guild)
+		handleHelp(s, m, guild)
 	}
 }
 
@@ -166,44 +84,47 @@ func mastery(s *discordgo.Session, m *discordgo.MessageCreate, args []string, gu
 		sendDiscordMessageComplex(s, m, send)
 	} else {
 		s.ChannelMessageSend(m.ChannelID, "Please follow the command format!")
-		//handleHelp(s, m, guild)
+		handleHelp(s, m, guild)
 	}
 }
 
-func handleHelp(s *discordgo.Session, interaction *discordgo.InteractionCreate, guild guilds.DiscordGuild) {
-	s.ChannelTyping(interaction.ChannelID)
-	log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + guild.Prefix + "help")
-	//sendDiscordMessageComplex(s, m, query.Help(guild.Region, guild.Prefix))
-	sendInteractionRespond(s, interaction, query.Help(guild.Region, guild.Prefix), "")
+func handleHelp(s *discordgo.Session, m *discordgo.MessageCreate, guild guilds.DiscordGuild) {
+	s.ChannelTyping(m.ChannelID)
+	log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + guild.Prefix + "help")
+	sendDiscordMessageComplex(s, m, query.Help(guild.Region, guild.Prefix))
 }
 
-func changeRegion(s *discordgo.Session, interaction *discordgo.InteractionCreate, region string, guild guilds.DiscordGuild) {
-	if isValidRegion(region) { //prob wont need this
-		//s.ChannelTyping(interaction.ChannelID)
-		log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + guild.Prefix + "region " + region)
-		if guild.ID == interaction.GuildID {
-			guild.Region = strings.ToUpper(region)
-			if guild.Region == "BR1" || guild.Region == "NA1" || guild.Region == "LA1" || guild.Region == "LA2" || guild.Region == "OC1" {
-				guild.Region2 = "americas"
-			} else if guild.Region == "JP1" || guild.Region == "KR" {
-				guild.Region2 = "asia"
-			} else {
-				guild.Region2 = "europe"
+func changeRegion(s *discordgo.Session, m *discordgo.MessageCreate, args []string, guild guilds.DiscordGuild) {
+	if validateName(args) {
+		if isValidRegion(args[1]) {
+			s.ChannelTyping(m.ChannelID)
+			log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + guild.Prefix + "region " + args[1])
+			if guild.ID == m.GuildID {
+				guild.Region = strings.ToUpper(args[1])
+				if guild.Region == "BR1" || guild.Region == "NA1" || guild.Region == "LA1" || guild.Region == "LA2" || guild.Region == "OC1" {
+					guild.Region2 = "americas"
+				} else if guild.Region == "JP1" || guild.Region == "KR" {
+					guild.Region2 = "asia"
+				} else {
+					guild.Region2 = "europe"
+				}
+				err := guilds.Update(guilds.DB, guild.ID, guild)
+				if err != nil {
+					log.Println(err)
+					return
+				}
+				log.Println("Discord server ID: " + m.GuildID + "  Changed region to " + guild.Region + " " + guild.Region2)
+				s.ChannelMessageSend(m.ChannelID, fmt.Sprintf("Region has been changed to %s for your discord", guild.Region))
 			}
-			err := guilds.Update(guilds.DB, guild.ID, guild)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			log.Println("Discord server ID: " + interaction.GuildID + "  Changed region to " + guild.Region + " " + guild.Region2)
-			sendInteractionRespond(s, interaction, &discordgo.MessageSend{}, fmt.Sprintf("Region has been changed to %s for your discord", guild.Region))
+		} else {
+			log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " Invalid region")
+			s.ChannelMessageSend(m.ChannelID,
+				"Invalid region provided. Valid regions are : BR1, EUN1, EUW1, JP1, KR, LA1, LA2, NA1, OC1, RU, TR1")
 		}
 	} else {
-		log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " Invalid region")
-		s.ChannelMessageSend(interaction.ChannelID,
-			"Invalid region provided. Valid regions are : BR1, EUN1, EUW1, JP1, KR, LA1, LA2, NA1, OC1, RU, TR1")
+		s.ChannelMessageSend(m.ChannelID, "Please follow the command format!")
+		handleHelp(s, m, guild)
 	}
-
 }
 
 func changePrefix(s *discordgo.Session, m *discordgo.MessageCreate, args []string, guild guilds.DiscordGuild) {
@@ -227,13 +148,13 @@ func changePrefix(s *discordgo.Session, m *discordgo.MessageCreate, args []strin
 			}
 			s.ChannelMessageSend(m.ChannelID, "Prefix has been changed to "+guild.Prefix)
 			log.Println("Discord server ID: " + m.GuildID + "  Changed prefix to " + guild.Prefix)
-			//handleHelp(s, m, guild)
+			handleHelp(s, m, guild)
 		} else {
 			s.ChannelMessageSend(m.ChannelID, "Prefix must be under 10 characters.")
 		}
 	} else {
 		s.ChannelMessageSend(m.ChannelID, "Please follow the command format!")
-		//handleHelp(s, m, guild)
+		handleHelp(s, m, guild)
 	}
 }
 
@@ -333,21 +254,6 @@ func sendDiscordMessageComplex(s *discordgo.Session, m *discordgo.MessageCreate,
 	if err != nil {
 		s.ChannelMessageSendComplex(m.ChannelID, query.ApplicationCommandsWarningAction(m.GuildID))
 		log.Println("application.commands scope not enabled. Discord server ID: " + m.GuildID)
-	}
-}
-
-func sendInteractionRespond(s *discordgo.Session, interaction *discordgo.InteractionCreate, send *discordgo.MessageSend, content string) {
-	err := s.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
-		Type: discordgo.InteractionResponseChannelMessageWithSource,
-		Data: &discordgo.InteractionResponseData{
-			Content:         content,
-			Embeds:          send.Embeds,
-			Files:           send.Files,
-			AllowedMentions: &discordgo.MessageAllowedMentions{},
-		},
-	})
-	if err != nil {
-		log.Println("Error sending embed. Discord server ID: " + interaction.GuildID + "  " + err.Error())
 	}
 }
 
