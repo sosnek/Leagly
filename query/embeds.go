@@ -79,41 +79,36 @@ func formatApiStatusEmbed(embed *discordgo.MessageEmbed, riotStatus RiotStatus, 
 ///
 ///
 ///
-func formatHelpEmbed(embed *discordgo.MessageEmbed, prefix string) *discordgo.MessageEmbed {
+func formatHelpEmbed(embed *discordgo.MessageEmbed) *discordgo.MessageEmbed {
 	embed.Fields = []*discordgo.MessageEmbedField{
 		{
-			Name:   prefix + "help",
+			Name:   "/help",
 			Value:  "Shows all available commands",
 			Inline: false,
 		},
 		{
-			Name:   prefix + "live <playername>",
+			Name:   "/live <playername>",
 			Value:  "Checks to see if the player is in a game",
 			Inline: false,
 		},
 		{
-			Name:   prefix + "lastmatch <playername>",
+			Name:   "/lastmatch <playername>",
 			Value:  "Shows the players last match stats",
 			Inline: false,
 		},
 		{
-			Name:   prefix + "lookup <playername>",
+			Name:   "/lookup <playername>",
 			Value:  "Shows ranked history of player",
 			Inline: false,
 		},
 		{
-			Name:   prefix + "mastery <playername>",
+			Name:   "/mastery <playername>",
 			Value:  "Shows mastery stats of player",
 			Inline: false,
 		},
 		{
-			Name:   prefix + "region <region code>",
+			Name:   "/region <region code>",
 			Value:  "Updates the region for your discord server",
-			Inline: false,
-		},
-		{
-			Name:   prefix + "prefix <new prefix>",
-			Value:  "Changes the prefix leagly will follow. (Admin only)",
 			Inline: false,
 		},
 	}

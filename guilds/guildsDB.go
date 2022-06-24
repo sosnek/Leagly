@@ -18,7 +18,7 @@ type DiscordGuild struct {
 	Prefix         string
 	JoinDate       string
 	AutoPatchNotes bool
-	PatchNotesCh   []byte
+	PatchNotesCh   string
 	Members        int
 }
 
@@ -91,8 +91,8 @@ func Delete(db *bolt.DB, key string) error {
 	return err
 }
 
-func GuildsWithAutoPatchNotes() [][]byte {
-	var patchNoteChannels [][]byte
+func GuildsWithAutoPatchNotes() []string {
+	var patchNoteChannels []string
 	DB.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("Guilds"))
 		b.ForEach(func(k, v []byte) error {

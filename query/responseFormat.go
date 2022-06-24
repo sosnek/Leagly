@@ -4,9 +4,6 @@ import (
 	"Leagly/guilds"
 	"errors"
 	"fmt"
-	"image"
-	"image/draw"
-	"image/jpeg"
 	"log"
 	"os"
 	"regexp"
@@ -113,7 +110,7 @@ func ErrorCreate(errMsg string) *discordgo.MessageSend {
 ///
 func ApplicationCommandsWarningAction(Guid string) *discordgo.MessageSend { //  //dev : https://discord.com/api/oauth2/authorize?client_id=936378357657006161&permissions=2147798016&scope=bot%20applications.commands&guild_id=
 	OAuthApplicationCommands := "[Add Slash commands permissions](https://discord.com/api/oauth2/authorize?client_id=930924283599925260&permissions=2147798016&scope=bot%20applications.commands&guild_id=" + Guid + ")"
-	embed := formatRankedEmbed("", "a", "Leagly will eventually be moving over to slash commands as required by many discord bots. Please enable the new permissions required for this by clicking the link below.\n\n"+OAuthApplicationCommands, 16777215, time.Now())
+	embed := formatRankedEmbed("", "a", "Leagly has moved over to slash commands as required by many discord bots. Please enable the new permissions required for this by clicking the link below.\n\n"+OAuthApplicationCommands, 16777215, time.Now())
 	embed = formatEmbedAuthorLeagly(embed, "Action Required!", LEAGLY_WARNING_ICON)
 	return createMessageSend(embed, []*discordgo.File{})
 }
@@ -130,10 +127,10 @@ func UpTime(start_time time.Time) *discordgo.MessageSend {
 ///
 /// [Join Leagly Discord](https://discord.gg/bxQRKA8D9g)\n
 ///
-func Help(discordRegion string, discorddPrefix string) *discordgo.MessageSend {
+func Help(discordRegion string) *discordgo.MessageSend {
 	embed := formatRankedEmbed("", "a", "Leagly Bot v2.6.1\nHere is a list of the available commands for Leagly bot:", 16777215, time.Now())
 	embed = formatEmbedAuthorLeagly(embed, fmt.Sprintf("Leagly Bot. [%s] Region", discordRegion), BASE_ASSET_URL+Version+LEAGLY_SUMMONER_ICON)
-	embed = formatHelpEmbed(embed, discorddPrefix)
+	embed = formatHelpEmbed(embed)
 	return createMessageSend(embed, []*discordgo.File{})
 }
 
@@ -873,71 +870,6 @@ func checkFileName(fileName string) string {
 		fileName = "Fiddlesticks.png"
 	}
 	return fileName
-}
-
-// Because discord embeds only support 2x2 images at a maximum, I decided to use a method
-// that combines 3 images into one to be use in a 1x3 format. Unfortunately discord also
-// has limitations on image size. Embed will be constrained if the image is greater than 300px
-// As a result, i limit 3 images combined to be at a maximum of 299 px in length :D
-func mergeImages(imageName []string) string {
-
-	var imgFile []*os.File
-	var img []image.Image
-	for n := 0; n < len(imageName); n++ {
-		imgFile1, err := os.Open(imageName[n])
-		if err != nil {
-			fmt.Println(err)
-		}
-		imgFile = append(imgFile, imgFile1)
-		img1, _, err := image.Decode(imgFile1)
-		if err != nil {
-			fmt.Println(err)
-		}
-		img = append(img, img1)
-	}
-
-	var sp3 image.Point
-	var sp image.Point
-	if len(img) == 3 {
-		sp = image.Point{(img[0].Bounds().Dx() - 20), 0}
-		sp3 = image.Point{sp.X + sp.X, 0}
-	} else if len(img) == 2 {
-		sp = image.Point{(img[0].Bounds().Dx()), 0}
-		sp3 = image.Point{sp.X, 0}
-	} else {
-		sp = image.Point{(img[0].Bounds().Dx()), 0}
-		sp3 = image.Point{0, 0}
-	}
-	r2 := image.Rectangle{sp, sp.Add(img[0].Bounds().Size())}
-
-	r3 := image.Rectangle{sp3, sp3.Add(img[0].Bounds().Size())} //all images are same size anyways
-	if len(img) == 3 {
-		r3.Max.X = 299 //Discord embeed width will be constrained if the image is 300px in width or greater
-	} else if len(img) == 2 {
-		r3.Max.X = sp.X + sp.X
-	} else {
-		r3.Max.X = sp.X
-	}
-	r := image.Rectangle{image.Point{0, 0}, r3.Max}
-
-	rgba := image.NewRGBA(r)
-	draw.Draw(rgba, img[0].Bounds(), img[0], image.Point{0, 0}, draw.Src)
-	if len(img) == 2 {
-		draw.Draw(rgba, r2, img[1], image.Point{0, 0}, draw.Src)
-	} else if len(img) == 3 {
-		draw.Draw(rgba, r2, img[1], image.Point{0, 0}, draw.Src)
-		draw.Draw(rgba, r3, img[2], image.Point{0, 0}, draw.Src)
-	}
-
-	out, err := os.Create("./output.png")
-	if err != nil {
-		fmt.Println(err)
-	}
-	var opt jpeg.Options
-	opt.Quality = 80
-
-	jpeg.Encode(out, rgba, &opt)
-	return "./output.png"
 }
 
 ///

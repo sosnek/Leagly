@@ -1,7 +1,6 @@
 package bot
 
 import (
-	"Leagly/config"
 	"Leagly/guilds"
 	"Leagly/query"
 	"fmt"
@@ -13,30 +12,178 @@ import (
 	"github.com/bwmarrin/discordgo"
 )
 
-func RegisterCommands(s *discordgo.Session) {
+func registerCommands(s *discordgo.Session) {
 	var commands []*discordgo.ApplicationCommand
-	commands = append(commands, RegisterRegionCommand(s), RegisterHelpCommand(s))
-	//command = append(commands, register....)
+	commands = append(commands, registerRegionCommand(s), registerHelpCommand(s), registerLiveCommand(s), registerLastmatchCommand(s),
+		registerLookupCommand(s), registerMasteryCommand(s), registerUptimeCommand(s), registerGCCommand(s), registerWhoCommand(s),
+		registerFeedbackCommand(s), registerStatusCommand(s), registerPatchnotesCommand(s))
 
-	_, err := s.ApplicationCommandBulkOverwrite(s.State.User.ID, "978768514909368351", commands)
+	_, err := s.ApplicationCommandBulkOverwrite(s.State.User.ID, "978768514909368351", commands) //Dev ID 930923025111580683
 
 	if err != nil {
 		panic("Could not register commands")
 	}
 }
 
-func RegisterHelpCommand(s *discordgo.Session) *discordgo.ApplicationCommand {
+// Command registration start
+func registerLiveCommand(s *discordgo.Session) *discordgo.ApplicationCommand {
 	command := &discordgo.ApplicationCommand{
-		Name:        "help",
-		Description: "Help command from leagly",
+		Name:        "live",
+		Description: "Live game stats of summoner.",
+		Options: []*discordgo.ApplicationCommandOption{
+			{
+				Type:        discordgo.ApplicationCommandOptionString,
+				Name:        "summoner",
+				Description: "Summoner IGN",
+				Required:    true,
+			},
+		},
 	}
 	return command
 }
 
-func RegisterRegionCommand(s *discordgo.Session) *discordgo.ApplicationCommand {
+func registerLastmatchCommand(s *discordgo.Session) *discordgo.ApplicationCommand {
+	command := &discordgo.ApplicationCommand{
+		Name:        "lastmatch",
+		Description: "Last match game stats of summoner.",
+		Options: []*discordgo.ApplicationCommandOption{
+			{
+				Type:        discordgo.ApplicationCommandOptionString,
+				Name:        "summoner",
+				Description: "Summoner IGN",
+				Required:    true,
+			},
+		},
+	}
+	return command
+}
+
+func registerLookupCommand(s *discordgo.Session) *discordgo.ApplicationCommand {
+	command := &discordgo.ApplicationCommand{
+		Name:        "lookup",
+		Description: "10 game stats of summoner.",
+		Options: []*discordgo.ApplicationCommandOption{
+			{
+				Type:        discordgo.ApplicationCommandOptionString,
+				Name:        "summoner",
+				Description: "Summoner IGN",
+				Required:    true,
+			},
+		},
+	}
+	return command
+}
+
+func registerMasteryCommand(s *discordgo.Session) *discordgo.ApplicationCommand {
+	command := &discordgo.ApplicationCommand{
+		Name:        "mastery",
+		Description: "Mastery stats of summoner.",
+		Options: []*discordgo.ApplicationCommandOption{
+			{
+				Type:        discordgo.ApplicationCommandOptionString,
+				Name:        "summoner",
+				Description: "Summoner IGN",
+				Required:    true,
+			},
+		},
+	}
+	return command
+}
+
+func registerPatchnotesCommand(s *discordgo.Session) *discordgo.ApplicationCommand {
+	command := &discordgo.ApplicationCommand{
+		Name:        "patchnotes",
+		Description: "League of Legends patchnotes",
+		Options: []*discordgo.ApplicationCommandOption{
+			{
+				Type:        discordgo.ApplicationCommandOptionString,
+				Name:        "auto-patch-notes",
+				Description: "Enable automatic patch notes updates to this channel.",
+				Required:    false,
+				Choices: []*discordgo.ApplicationCommandOptionChoice{
+					{
+						Name:  "toggle",
+						Value: "toggle",
+					},
+				},
+			},
+		},
+	}
+	return command
+}
+
+func registerHelpCommand(s *discordgo.Session) *discordgo.ApplicationCommand {
+	command := &discordgo.ApplicationCommand{
+		Name:        "help",
+		Description: "List of Leagly commands.",
+	}
+	return command
+}
+
+func registerUptimeCommand(s *discordgo.Session) *discordgo.ApplicationCommand {
+	command := &discordgo.ApplicationCommand{
+		Name:        "uptime",
+		Description: "Time since Leagly started.",
+	}
+	return command
+}
+
+func registerGCCommand(s *discordgo.Session) *discordgo.ApplicationCommand {
+	dmPermission := true
+	var defaultMemberPermissions int64 = discordgo.PermissionManageServer
+	command := &discordgo.ApplicationCommand{
+		Name:                     "gc",
+		Description:              "How many discord servers leagly is in.",
+		DMPermission:             &dmPermission,
+		DefaultMemberPermissions: &defaultMemberPermissions,
+	}
+	return command
+}
+
+func registerWhoCommand(s *discordgo.Session) *discordgo.ApplicationCommand {
+	command := &discordgo.ApplicationCommand{
+		Name:        "who",
+		Description: "Info on guild (member count, date join etc).",
+		Options: []*discordgo.ApplicationCommandOption{
+			{
+				Type:        discordgo.ApplicationCommandOptionString,
+				Name:        "id",
+				Description: "server ID",
+				Required:    true,
+			},
+		},
+	}
+	return command
+}
+
+func registerFeedbackCommand(s *discordgo.Session) *discordgo.ApplicationCommand {
+	command := &discordgo.ApplicationCommand{
+		Name:        "feedback",
+		Description: "Give feedback to the Leagly developer!",
+		Options: []*discordgo.ApplicationCommandOption{
+			{
+				Type:        discordgo.ApplicationCommandOptionString,
+				Name:        "message",
+				Description: "What would you like to say?",
+				Required:    true,
+			},
+		},
+	}
+	return command
+}
+
+func registerStatusCommand(s *discordgo.Session) *discordgo.ApplicationCommand {
+	command := &discordgo.ApplicationCommand{
+		Name:        "status",
+		Description: "Status of riot servers for your current region.",
+	}
+	return command
+}
+
+func registerRegionCommand(s *discordgo.Session) *discordgo.ApplicationCommand {
 	command := &discordgo.ApplicationCommand{
 		Name:        "region",
-		Description: "Set the region for your discord server",
+		Description: "Update your league of legends region for Leagly.",
 		Options: []*discordgo.ApplicationCommandOption{
 			{
 				Type:        discordgo.ApplicationCommandOptionString,
@@ -95,234 +242,185 @@ func RegisterRegionCommand(s *discordgo.Session) *discordgo.ApplicationCommand {
 	return command
 }
 
-func live(s *discordgo.Session, m *discordgo.MessageCreate, args []string, guild guilds.DiscordGuild) {
-	if validateName(args) {
-		s.ChannelTyping(m.ChannelID)
-		log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + guild.Prefix + "live " + args[1])
-		if onCoolDown(m.Author.ID, 3) > 0 {
-			s.ChannelMessageSend(m.ChannelID, "You're currently on cooldown. Please wait a few seconds.")
-			log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " on cooldown")
-			return
-		}
-		send, err := query.IsInGame(args[1], guild.Region)
-		if err != nil {
-			log.Println("Error: Discord server ID: " + m.GuildID + "  " + err.Error())
-		}
-		sendDiscordMessageComplex(s, m, send)
-	} else {
-		s.ChannelMessageSend(m.ChannelID, "Please follow the command format!")
-		//handleHelp(s, m, guild)
+// Command registration end
+
+///
+///
+func live(s *discordgo.Session, interaction *discordgo.InteractionCreate, summoner string, guild guilds.DiscordGuild) {
+	sendInteractionRespond(s, interaction, &discordgo.MessageSend{}, "Please wait...")
+	log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + "live " + summoner)
+	if onCoolDown(interaction.Member.User.ID, 3) > 0 {
+		s.ChannelMessageSend(interaction.ChannelID, "You're currently on cooldown. Please wait a few seconds.")
+		log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " on cooldown")
+		return
 	}
-}
-
-func lastmatch(s *discordgo.Session, m *discordgo.MessageCreate, args []string, guild guilds.DiscordGuild) {
-	if validateName(args) {
-		s.ChannelTyping(m.ChannelID)
-		log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + guild.Prefix + "lastmatch " + args[1])
-		send, err := query.GetLastMatch(args[1], guild.Region, guild.Region2)
-		if err != nil {
-			log.Println("Error: Discord server ID: " + m.GuildID + "  " + err.Error())
-		}
-		sendDiscordMessageComplex(s, m, send)
-	} else {
-		s.ChannelMessageSend(m.ChannelID, "Please follow the command format!")
-		//handleHelp(s, m, guild)
-	}
-}
-
-func lookup(s *discordgo.Session, m *discordgo.MessageCreate, args []string, guild guilds.DiscordGuild) {
-	if validateName(args) {
-		s.ChannelTyping(m.ChannelID)
-		log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + guild.Prefix + "lookup " + args[1])
-		if onCoolDown(m.Author.ID, 5) > 0 {
-			s.ChannelMessageSend(m.ChannelID, "You're currently on cooldown. Please wait a few seconds.")
-			log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " on cooldown")
-			return
-		}
-		send, err := query.LookupPlayer(args[1], guild.Region, guild.Region2)
-		if err != nil {
-			log.Println("Error: Discord server ID: " + m.GuildID + "  " + err.Error())
-		}
-		sendDiscordMessageComplex(s, m, send)
-	} else {
-		s.ChannelMessageSend(m.ChannelID, "Please follow the command format!")
-		//handleHelp(s, m, guild)
-	}
-}
-
-func mastery(s *discordgo.Session, m *discordgo.MessageCreate, args []string, guild guilds.DiscordGuild) {
-	if validateName(args) {
-		s.ChannelTyping(m.ChannelID)
-		log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + guild.Prefix + "mastery " + args[1])
-		if onCoolDown(m.Author.ID, 3) > 0 {
-			s.ChannelMessageSend(m.ChannelID, "You're currently on cooldown. Please wait a few seconds.")
-			log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " on cooldown")
-			return
-		}
-		send, err := query.MasteryPlayer(args[1], guild.Region)
-		if err != nil {
-			log.Println("Error: Discord server ID: " + m.GuildID + "  " + err.Error())
-		}
-		sendDiscordMessageComplex(s, m, send)
-	} else {
-		s.ChannelMessageSend(m.ChannelID, "Please follow the command format!")
-		//handleHelp(s, m, guild)
-	}
-}
-
-func handleHelp(s *discordgo.Session, interaction *discordgo.InteractionCreate, guild guilds.DiscordGuild) {
-	s.ChannelTyping(interaction.ChannelID)
-	log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + guild.Prefix + "help")
-	//sendDiscordMessageComplex(s, m, query.Help(guild.Region, guild.Prefix))
-	sendInteractionRespond(s, interaction, query.Help(guild.Region, guild.Prefix), "")
-}
-
-func changeRegion(s *discordgo.Session, interaction *discordgo.InteractionCreate, region string, guild guilds.DiscordGuild) {
-	if isValidRegion(region) { //prob wont need this
-		//s.ChannelTyping(interaction.ChannelID)
-		log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + guild.Prefix + "region " + region)
-		if guild.ID == interaction.GuildID {
-			guild.Region = strings.ToUpper(region)
-			if guild.Region == "BR1" || guild.Region == "NA1" || guild.Region == "LA1" || guild.Region == "LA2" || guild.Region == "OC1" {
-				guild.Region2 = "americas"
-			} else if guild.Region == "JP1" || guild.Region == "KR" {
-				guild.Region2 = "asia"
-			} else {
-				guild.Region2 = "europe"
-			}
-			err := guilds.Update(guilds.DB, guild.ID, guild)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			log.Println("Discord server ID: " + interaction.GuildID + "  Changed region to " + guild.Region + " " + guild.Region2)
-			sendInteractionRespond(s, interaction, &discordgo.MessageSend{}, fmt.Sprintf("Region has been changed to %s for your discord", guild.Region))
-		}
-	} else {
-		log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " Invalid region")
-		s.ChannelMessageSend(interaction.ChannelID,
-			"Invalid region provided. Valid regions are : BR1, EUN1, EUW1, JP1, KR, LA1, LA2, NA1, OC1, RU, TR1")
-	}
-
-}
-
-func changePrefix(s *discordgo.Session, m *discordgo.MessageCreate, args []string, guild guilds.DiscordGuild) {
-	isAdmin, err := s.UserChannelPermissions(m.Author.ID, m.ChannelID)
+	send, err := query.IsInGame(summoner, guild.Region)
 	if err != nil {
-		log.Println("Discord server ID: " + m.GuildID + " Error getting channel permissions")
+		log.Println("Error: Discord server ID: " + interaction.GuildID + "  " + err.Error())
+	}
+	sendInteractionEdit(s, interaction.Interaction, send)
+}
+
+///
+///
+func lastmatch(s *discordgo.Session, interaction *discordgo.InteractionCreate, summoner string, guild guilds.DiscordGuild) {
+	sendInteractionRespond(s, interaction, &discordgo.MessageSend{}, "Please wait...")
+	log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + "lastmatch " + summoner)
+	send, err := query.GetLastMatch(summoner, guild.Region, guild.Region2)
+	if err != nil {
+		log.Println("Error: Discord server ID: " + interaction.GuildID + "  " + err.Error())
+	}
+	sendInteractionEdit(s, interaction.Interaction, send)
+}
+
+///
+///
+func lookup(s *discordgo.Session, interaction *discordgo.InteractionCreate, summoner string, guild guilds.DiscordGuild) {
+	sendInteractionRespond(s, interaction, &discordgo.MessageSend{}, "Please wait...")
+	log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + "lookup " + summoner)
+	if onCoolDown(interaction.Member.User.ID, 5) > 0 {
+		s.ChannelMessageSend(interaction.ChannelID, "You're currently on cooldown. Please wait a few seconds.")
+		log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " on cooldown")
 		return
 	}
-	if isAdmin&discordgo.PermissionAdministrator < 1 {
-		s.ChannelMessageSend(m.ChannelID, "This is an Admin only command")
-		log.Println("Discord server ID: " + m.GuildID + " User does not have channel admin controls. " + m.Author.Username)
+	send, err := query.LookupPlayer(summoner, guild.Region, guild.Region2)
+	if err != nil {
+		log.Println("Error: Discord server ID: " + interaction.GuildID + "  " + err.Error())
+	}
+	sendInteractionEdit(s, interaction.Interaction, send)
+}
+
+///
+///
+func mastery(s *discordgo.Session, interaction *discordgo.InteractionCreate, summoner string, guild guilds.DiscordGuild) {
+	sendInteractionRespond(s, interaction, &discordgo.MessageSend{}, "Please wait...")
+	log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + "mastery " + summoner)
+	if onCoolDown(interaction.Member.User.ID, 3) > 0 {
+		s.ChannelMessageSend(interaction.ChannelID, "You're currently on cooldown. Please wait a few seconds.")
+		log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " on cooldown")
 		return
 	}
-	if validateName(args) {
-		if len(args[1]) < 10 {
-			guild.Prefix = args[1]
-			err = guilds.Update(guilds.DB, guild.ID, guild)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			s.ChannelMessageSend(m.ChannelID, "Prefix has been changed to "+guild.Prefix)
-			log.Println("Discord server ID: " + m.GuildID + "  Changed prefix to " + guild.Prefix)
-			//handleHelp(s, m, guild)
+	send, err := query.MasteryPlayer(summoner, guild.Region)
+	if err != nil {
+		log.Println("Error: Discord server ID: " + interaction.GuildID + "  " + err.Error())
+	}
+	sendInteractionEdit(s, interaction.Interaction, send)
+}
+
+///
+///
+func handleHelp(s *discordgo.Session, interaction *discordgo.InteractionCreate, guild guilds.DiscordGuild) {
+	log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + "help")
+	sendInteractionRespond(s, interaction, query.Help(guild.Region), "")
+}
+
+///
+///
+func changeRegion(s *discordgo.Session, interaction *discordgo.InteractionCreate, region string, guild guilds.DiscordGuild) {
+	log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + "region " + region)
+	if guild.ID == interaction.GuildID {
+		guild.Region = strings.ToUpper(region)
+		if guild.Region == "BR1" || guild.Region == "NA1" || guild.Region == "LA1" || guild.Region == "LA2" || guild.Region == "OC1" {
+			guild.Region2 = "americas"
+		} else if guild.Region == "JP1" || guild.Region == "KR" {
+			guild.Region2 = "asia"
 		} else {
-			s.ChannelMessageSend(m.ChannelID, "Prefix must be under 10 characters.")
+			guild.Region2 = "europe"
 		}
-	} else {
-		s.ChannelMessageSend(m.ChannelID, "Please follow the command format!")
-		//handleHelp(s, m, guild)
-	}
-}
-
-func uptime(s *discordgo.Session, m *discordgo.MessageCreate, args []string, guild guilds.DiscordGuild) {
-	if len(args) < 2 {
-		log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + guild.Prefix + "uptime")
-		sendDiscordMessageComplex(s, m, query.UpTime(up_time))
-	}
-}
-
-func status(s *discordgo.Session, m *discordgo.MessageCreate, args []string, guild guilds.DiscordGuild) {
-	if len(args) < 2 {
-		log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + guild.Prefix + "status")
-		sendDiscordMessageComplex(s, m, query.RiotApiStatus(guild.Region))
-	}
-
-}
-
-func getGuildCount(s *discordgo.Session, m *discordgo.MessageCreate) {
-	if guilds.HasDebugPermissions(m.Author.ID) {
-		sendDiscordMessageComplex(s, m, query.GuildCount(guilds.GetGuildCount()))
-	}
-}
-
-func getGuildDebugInfo(s *discordgo.Session, m *discordgo.MessageCreate, args []string) {
-	if guilds.HasDebugPermissions(m.Author.ID) {
-		if validateName(args) {
-			guild, err := guilds.View(guilds.DB, args[1])
-			if err != nil {
-				log.Println(err)
-			} else {
-				sendDiscordMessageComplex(s, m, query.GuildDebugInfo(guild))
-			}
-		}
-	}
-}
-
-func feedback(s *discordgo.Session, m *discordgo.MessageCreate, args []string, guild guilds.DiscordGuild) {
-	if validateName(args) {
-		if onCoolDown(m.Author.ID, 30) > 0 {
-			s.ChannelMessageSend(m.ChannelID, "You're currently on cooldown. Please wait a few seconds.")
-			log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " on cooldown")
+		err := guilds.Update(guilds.DB, guild.ID, guild)
+		if err != nil {
+			log.Println(err)
 			return
+		}
+		log.Println("Discord server ID: " + interaction.GuildID + "  Changed region to " + guild.Region + " " + guild.Region2)
+		sendInteractionRespond(s, interaction, &discordgo.MessageSend{}, fmt.Sprintf("Region has been changed to %s for your discord", guild.Region))
+	}
+}
+
+///
+///
+func uptime(s *discordgo.Session, interaction *discordgo.InteractionCreate, guild guilds.DiscordGuild) {
+	log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + "uptime")
+	sendInteractionRespond(s, interaction, query.UpTime(up_time), "")
+}
+
+///
+///
+func status(s *discordgo.Session, interaction *discordgo.InteractionCreate, guild guilds.DiscordGuild) {
+	log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + "status")
+	sendInteractionRespond(s, interaction, query.RiotApiStatus(guild.Region), "")
+}
+
+///
+///
+func getGuildCount(s *discordgo.Session, interaction *discordgo.InteractionCreate) {
+	log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + "gc")
+	if guilds.HasDebugPermissions(interaction.Member.User.ID) {
+		sendInteractionRespond(s, interaction, query.GuildCount(guilds.GetGuildCount()), "")
+	}
+}
+
+///
+///
+func getGuildDebugInfo(s *discordgo.Session, interaction *discordgo.InteractionCreate, guild string) {
+	log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + "who")
+	if guilds.HasDebugPermissions(interaction.Member.User.ID) {
+		guild, err := guilds.View(guilds.DB, guild)
+		if err != nil {
+			log.Println(err)
 		} else {
-			log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + guild.Prefix + "feedback")
-			s.ChannelMessageSend("955121671105286175", fmt.Sprintf("From %s, Feedback: %s ", m.Author.Username, args[1]))
-			s.ChannelMessageSend(m.ChannelID, "Message has been saved! Thank you for the feedback. :)")
+			sendInteractionRespond(s, interaction, query.GuildDebugInfo(guild), "")
 		}
 	}
 }
 
-func patchNotes(s *discordgo.Session, m *discordgo.MessageCreate, args []string, guild guilds.DiscordGuild) {
-	if len(args) == 1 {
-		s.ChannelTyping(m.ChannelID)
-		log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + guild.Prefix + "patchnotes")
+///
+///
+func feedback(s *discordgo.Session, interaction *discordgo.InteractionCreate, feedback string, guild guilds.DiscordGuild) {
+	if onCoolDown(interaction.Member.User.ID, 30) > 0 {
+		sendInteractionRespond(s, interaction, &discordgo.MessageSend{}, "You're currently on cooldown. Please wait a few seconds.")
+		log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " on cooldown")
+		return
+	} else {
+		s.ChannelMessageSend("955121671105286175", fmt.Sprintf("From %s, Feedback: %s ", interaction.Member.User.Username, feedback))
+		sendInteractionRespond(s, interaction, &discordgo.MessageSend{}, "Message has been saved! Thank you for the feedback. :)")
+		log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + "feedback")
+	}
+}
+
+///
+///
+func patchNotes(s *discordgo.Session, interaction *discordgo.InteractionCreate, toggle string, guild guilds.DiscordGuild) {
+	if toggle == "" {
+		s.ChannelTyping(interaction.ChannelID)
+		log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + "patchnotes")
 		send, err := query.PatchNotes()
 		if err != nil {
-			log.Println("Error: Discord server ID: " + m.GuildID + "  " + err.Error())
+			log.Println("Error: Discord server ID: " + interaction.GuildID + "  " + err.Error())
 		}
-		sendDiscordMessageComplex(s, m, send)
-	} else if len(args) == 2 {
-		if args[1] == "toggle" {
-			log.Println("Discord server ID: " + m.GuildID + "  " + m.Author.Username + " : " + guild.Prefix + "patchnotes toggle")
-			guild.AutoPatchNotes = !guild.AutoPatchNotes
-			PatchNotesCh, err := query.Encrypt([]byte(m.ChannelID), []byte(config.EncryptionKey))
-			if err != nil {
-				log.Println(err)
-				return
-			}
-			guild.PatchNotesCh = PatchNotesCh
-
-			err = guilds.Update(guilds.DB, guild.ID, guild)
-			if err != nil {
-				log.Println(err)
-				return
-			}
-
-			if guild.AutoPatchNotes {
-				s.ChannelMessageSend(m.ChannelID, "Auto patch notes have been enabled")
-			} else {
-				s.ChannelMessageSend(m.ChannelID, "Auto patch notes have been disabled")
-			}
-			log.Println("Discord server ID: " + m.GuildID + " auto patchnotes have been set to " + strconv.FormatBool(guild.AutoPatchNotes))
-		}
+		sendInteractionRespond(s, interaction, send, "")
 	} else {
-		s.ChannelMessageSend(m.ChannelID, "Incorrect format. Patchnotes example: ```>>Patchnotes toggle```")
+		log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + "patchnotes toggle")
+		guild.AutoPatchNotes = !guild.AutoPatchNotes
+		guild.PatchNotesCh = interaction.ChannelID
+
+		err := guilds.Update(guilds.DB, guild.ID, guild)
+		if err != nil {
+			log.Println(err)
+			return
+		}
+
+		if guild.AutoPatchNotes {
+			sendInteractionRespond(s, interaction, &discordgo.MessageSend{}, "Auto patch notes have been enabled")
+		} else {
+			sendInteractionRespond(s, interaction, &discordgo.MessageSend{}, "Auto patch notes have been disabled")
+		}
+		log.Println("Discord server ID: " + interaction.GuildID + " auto patchnotes have been set to " + strconv.FormatBool(guild.AutoPatchNotes))
 	}
 }
 
+///
+///
 func sendDiscordMessageComplex(s *discordgo.Session, m *discordgo.MessageCreate, send *discordgo.MessageSend) {
 	_, err := s.ChannelMessageSendComplex(m.ChannelID, send)
 	if err != nil {
@@ -336,6 +434,8 @@ func sendDiscordMessageComplex(s *discordgo.Session, m *discordgo.MessageCreate,
 	}
 }
 
+///
+///
 func sendInteractionRespond(s *discordgo.Session, interaction *discordgo.InteractionCreate, send *discordgo.MessageSend, content string) {
 	err := s.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
@@ -348,9 +448,40 @@ func sendInteractionRespond(s *discordgo.Session, interaction *discordgo.Interac
 	})
 	if err != nil {
 		log.Println("Error sending embed. Discord server ID: " + interaction.GuildID + "  " + err.Error())
+		_, err = s.FollowupMessageCreate(interaction.Interaction, true, &discordgo.WebhookParams{
+			Content: "Something went wrong",
+		})
+		if err != nil {
+			log.Println("Uh Oh! Error sending interaction follow-up: Discord server ID: " + interaction.GuildID + "  " + err.Error())
+		}
+		return
 	}
 }
 
+///
+///
+func sendInteractionEdit(s *discordgo.Session, interaction *discordgo.Interaction, send *discordgo.MessageSend) {
+	str := "Done!"
+	contentPtr := &str
+	_, err := s.InteractionResponseEdit(interaction, &discordgo.WebhookEdit{
+		Content: contentPtr,
+		Embeds:  &send.Embeds,
+		Files:   send.Files,
+	})
+	if err != nil {
+		log.Println("Error sending interaction embed: Discord server ID: " + interaction.GuildID + "  " + err.Error())
+		_, err = s.FollowupMessageCreate(interaction, true, &discordgo.WebhookParams{ //embed error message?
+			Content: "Something went wrong",
+		})
+		if err != nil {
+			log.Println("Uh Oh! Error sending interaction follow-up: Discord server ID: " + interaction.GuildID + "  " + err.Error())
+		}
+		return
+	}
+}
+
+///
+///
 func onCoolDown(user string, cd float64) float64 {
 	for i := range discordUser {
 		if discordUser[i].ID == user {
@@ -368,16 +499,6 @@ func onCoolDown(user string, cd float64) float64 {
 	return 0
 }
 
-func isValidRegion(region string) bool {
-	regions := [11]string{"BR1", "EUN1", "EUW1", "JP1", "KR", "LA1", "LA2", "NA1", "OC1", "RU", "TR1"}
-	for i := 0; i < len(regions); i++ {
-		if regions[i] == strings.ToUpper(region) {
-			return true
-		}
-	}
-	return false
-}
-
 ///Some summoner names can have spaces in them
 /// This method will combine each name piece into a whole string
 func createName(args []string) []string {
@@ -385,12 +506,4 @@ func createName(args []string) []string {
 		args[1] += " " + args[n]
 	}
 	return args
-}
-
-func validateName(name []string) bool {
-	if len(name) < 2 {
-		log.Println("Name not found in args list")
-		return false
-	}
-	return len([]rune(name[1])) > 0
 }

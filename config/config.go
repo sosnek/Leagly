@@ -2,23 +2,21 @@ package config
 
 import (
 	"encoding/json"
-	"fmt"       //used to print errors majorly.
-	"io/ioutil" //it will be used to help us read our config.json file.
+	"fmt"
+	"io/ioutil"
 	"os"
 )
 
 var (
-	Token         string //To store value of Token from config.json .
-	EncryptionKey string // To store value of BotPrefix from config.json.
-	ApiKey        string
+	Token  string
+	ApiKey string
 
 	config *configStruct //To store value extracted from config.json.
 )
 
 type configStruct struct {
-	Token         string `json : "Token"`
-	EncryptionKey string `json : "encryptionKey"`
-	ApiKey        string `json : "ApiKey"`
+	Token  string `json : "Token"`
+	ApiKey string `json : "ApiKey"`
 }
 
 func ReadConfig() error {
@@ -39,7 +37,6 @@ func ReadConfig() error {
 	}
 
 	Token = config.Token
-	EncryptionKey = config.EncryptionKey
 	ApiKey = config.ApiKey
 
 	if Token == "" {
@@ -47,9 +44,6 @@ func ReadConfig() error {
 	}
 	if ApiKey == "" {
 		ApiKey = os.Getenv("RiotKey")
-	}
-	if EncryptionKey == "" {
-		ApiKey = os.Getenv("EncryptionKey")
 	}
 
 	return nil

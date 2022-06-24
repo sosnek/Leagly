@@ -444,14 +444,14 @@ func GetLeagueVersion() string {
 	//
 	resp, err := http.Get("http://ddragon.leagueoflegends.com/api/versions.json")
 	if err != nil {
-		log.Println("Unable to get league of legends version. Defaulting to 12.7.1 Error: " + err.Error())
-		return "12.7.1"
+		log.Println("Unable to get league of legends version. Defaulting to current version. Error: " + err.Error())
+		return Version
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Println("Unable to read riot status info. Defaulting to 12.7.1 Error: " + err.Error())
-		return "12.7.1"
+		log.Println("Unable to read riot status info. Defaulting to current version. Error: " + err.Error())
+		return Version
 	}
 	//Convert the body to type string
 	var version []string
@@ -459,8 +459,8 @@ func GetLeagueVersion() string {
 	json.Unmarshal([]byte(sb), &version)
 
 	if len(version) < 1 {
-		log.Println("No version was found. Defaulting to 12.7.1. Error: " + err.Error())
-		return "12.7.1"
+		log.Println("No version was found. Defaulting to current version. Error: " + err.Error())
+		return Version
 	}
 
 	return version[0]

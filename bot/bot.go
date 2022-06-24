@@ -59,6 +59,9 @@ func ConnectToDiscord() {
 ///
 func Initialize() {
 	err := query.InitializedChampStruct()
+	if err != nil {
+		panic(err)
+	}
 	guilds.DB, err = guilds.SetupDB()
 	if err != nil {
 		panic(err)
@@ -68,8 +71,8 @@ func Initialize() {
 }
 
 func InitializeExtra(s *discordgo.Session) {
-	RegisterCommands(s)
-	s.UpdateListeningStatus(">>help")
+	registerCommands(s)
+	s.UpdateListeningStatus("/help")
 	query.InitializeEmojis(s)
 	query.Version = query.GetLeagueVersion()
 	go query.UpdateVersionAsync(s)
@@ -82,7 +85,7 @@ func guildCreate(s *discordgo.Session, event *discordgo.GuildCreate) {
 
 	_, err := guilds.View(guilds.DB, event.ID)
 	if err != nil { //expect an error if the guild already exists in db
-		err = guilds.Add(guilds.DB, event.ID, guilds.DiscordGuild{ID: event.ID, Region: "NA1", Region2: "americas", Prefix: ">>", Members: event.Guild.MemberCount, JoinDate: time.Now().Format(time.RFC3339)})
+		err = guilds.Add(guilds.DB, event.ID, guilds.DiscordGuild{ID: event.ID, Region: "NA1", Region2: "americas", Members: event.Guild.MemberCount, JoinDate: time.Now().Format(time.RFC3339)})
 		if err == nil {
 			log.Println("Added guild ID:" + event.Guild.ID + ". Name: " + event.Guild.Name + " Num of users in guild: " + strconv.Itoa(event.Guild.MemberCount))
 		} else {
@@ -109,11 +112,6 @@ func guildDelete(bot *discordgo.Session, event *discordgo.GuildDelete) {
 	}
 }
 
-type Status struct {
-	Message     string
-	Status_code int
-}
-
 func slashCommands(s *discordgo.Session, event *discordgo.InteractionCreate) {
 	if event.Type != discordgo.InteractionApplicationCommand {
 		return
@@ -126,10 +124,55 @@ func slashCommands(s *discordgo.Session, event *discordgo.InteractionCreate) {
 	data := event.ApplicationCommandData()
 	switch data.Name {
 	case "region":
-		value := data.Options[0].StringValue()
+		value := data.Options[0].StringValue() //Dont need to check for empty string because options are prefilled
 		changeRegion(s, event, value, guild)
 	case "help":
 		handleHelp(s, event, guild)
+	case "uptime":
+		uptime(s, event, guild)
+	case "gc":
+		getGuildCount(s, event)
+	case "who":
+		if data.Options[0].StringValue() != "" {
+			guildID := data.Options[0].StringValue()
+			getGuildDebugInfo(s, event, guildID)
+		}
+	case "feedback":
+		if data.Options[0].StringValue() != "" {
+			feedbackNote := data.Options[0].StringValue()
+			feedback(s, event, feedbackNote, guild)
+		}
+	case "status":
+		status(s, event, guild)
+	case "live":
+		if data.Options[0].StringValue() != "" {
+			value := data.Options[0].StringValue()
+			live(s, event, value, guild)
+		}
+	case "lastmatch":
+		if data.Options[0].StringValue() != "" {
+			value := data.Options[0].StringValue()
+			lastmatch(s, event, value, guild)
+		}
+	case "lookup":
+		if data.Options[0].StringValue() != "" {
+			value := data.Options[0].StringValue()
+			lookup(s, event, value, guild)
+		}
+	case "mastery":
+		if data.Options[0].StringValue() != "" {
+			value := data.Options[0].StringValue()
+			mastery(s, event, value, guild)
+		}
+	case "patchnotes":
+		if len(data.Options) == 1 {
+			if data.Options[0].StringValue() != "" {
+				toggle := data.Options[0].StringValue()
+				patchNotes(s, event, toggle, guild)
+			}
+		} else {
+			patchNotes(s, event, "", guild)
+		}
 	}
 }
 
@@ -159,64 +202,14 @@ func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
 	prefix := strings.ToLower(guild.Prefix)
 	command := strings.ToLower(args[0])
 
-	if command == prefix+"help" {
-		//handleHelp(s, m, guild)
+	if len(command) < 2 {
 		return
 	}
-
-	if command == prefix+"region" {
-		//changeRegion(s, m, args, guild)
-		return
-	}
-
-	if command == prefix+"live" {
-		live(s, m, args, guild)
-		return
-	}
-
-	if command == prefix+"lastmatch" {
-		lastmatch(s, m, args, guild)
-		return
-	}
-
-	if command == prefix+"lookup" {
-		lookup(s, m, args, guild)
-		return
-	}
-
-	if command == prefix+"mastery" {
-		mastery(s, m, args, guild)
-		return
-	}
-
-	if command == prefix+"prefix" {
-		changePrefix(s, m, args, guild)
-		return
-	}
-
-	if command == prefix+"uptime" {
-		uptime(s, m, args, guild)
-		return
-	}
-
-	if command == prefix+"gc" {
-		getGuildCount(s, m)
-	}
-
-	if command == prefix+"who" {
-		getGuildDebugInfo(s, m, args)
-	}
-
-	if command == prefix+"feedback" {
-		feedback(s, m, args, guild)
-	}
-
-	if command == prefix+"status" {
-		status(s, m, args, guild)
-	}
-
-	if command == prefix+"patchnotes" {
-		patchNotes(s, m, args, guild)
+	pre := command[0:2]
+	if prefix == pre || pre == ">>" {
+		sendDiscordMessageComplex(s, m, &discordgo.MessageSend{
+			Content: "These commands have been deprecated. please use /help for a list of commands :)",
+		})
 	}
 }
 
