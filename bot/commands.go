@@ -18,7 +18,7 @@ func registerCommands(s *discordgo.Session) {
 		registerLookupCommand(s), registerMasteryCommand(s), registerUptimeCommand(s), registerGCCommand(s), registerWhoCommand(s),
 		registerFeedbackCommand(s), registerStatusCommand(s), registerPatchnotesCommand(s))
 
-	_, err := s.ApplicationCommandBulkOverwrite(s.State.User.ID, "978768514909368351", commands) //Dev ID 930923025111580683
+	_, err := s.ApplicationCommandBulkOverwrite(s.State.User.ID, "", commands) //Dev ID 930923025111580683
 
 	if err != nil {
 		panic("Could not register commands. " + err.Error())
