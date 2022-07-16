@@ -21,7 +21,7 @@ func registerCommands(s *discordgo.Session) {
 	_, err := s.ApplicationCommandBulkOverwrite(s.State.User.ID, "978768514909368351", commands) //Dev ID 930923025111580683
 
 	if err != nil {
-		panic("Could not register commands")
+		panic("Could not register commands. " + err.Error())
 	}
 }
 
@@ -61,7 +61,7 @@ func registerLastmatchCommand(s *discordgo.Session) *discordgo.ApplicationComman
 func registerLookupCommand(s *discordgo.Session) *discordgo.ApplicationCommand {
 	command := &discordgo.ApplicationCommand{
 		Name:        "lookup",
-		Description: "10 game stats of summoner.",
+		Description: "Last 10 ranked game stats of summoner.",
 		Options: []*discordgo.ApplicationCommandOption{
 			{
 				Type:        discordgo.ApplicationCommandOptionString,
@@ -143,7 +143,7 @@ func registerGCCommand(s *discordgo.Session) *discordgo.ApplicationCommand {
 func registerWhoCommand(s *discordgo.Session) *discordgo.ApplicationCommand {
 	command := &discordgo.ApplicationCommand{
 		Name:        "who",
-		Description: "Info on guild (member count, date join etc).",
+		Description: "Debug info of guild.",
 		Options: []*discordgo.ApplicationCommandOption{
 			{
 				Type:        discordgo.ApplicationCommandOptionString,
@@ -257,6 +257,7 @@ func live(s *discordgo.Session, interaction *discordgo.InteractionCreate, summon
 	send, err := query.IsInGame(summoner, guild.Region)
 	if err != nil {
 		log.Println("Error: Discord server ID: " + interaction.GuildID + "  " + err.Error())
+		//dont return because we still want to send an error embed
 	}
 	sendInteractionEdit(s, interaction.Interaction, send)
 }
@@ -382,9 +383,14 @@ func feedback(s *discordgo.Session, interaction *discordgo.InteractionCreate, fe
 		log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " on cooldown")
 		return
 	} else {
-		s.ChannelMessageSend("955121671105286175", fmt.Sprintf("From %s, Feedback: %s ", interaction.Member.User.Username, feedback))
-		sendInteractionRespond(s, interaction, &discordgo.MessageSend{}, "Message has been saved! Thank you for the feedback. :)")
-		log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + "feedback")
+		_, err := s.ChannelMessageSend("955121671105286175", fmt.Sprintf("From %s, Feedback: %s ", interaction.Member.User.Username, feedback))
+		if err != nil {
+			sendInteractionRespond(s, interaction, &discordgo.MessageSend{}, "Sorry, something went wrong :(")
+			log.Println("Error sending feedback. Discord server ID: " + interaction.GuildID + "  " + err.Error())
+		} else {
+			sendInteractionRespond(s, interaction, &discordgo.MessageSend{}, "Message has been saved! Thank you for the feedback. :)")
+			log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + "feedback")
+		}
 	}
 }
 
