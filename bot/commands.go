@@ -356,9 +356,7 @@ func status(s *discordgo.Session, interaction *discordgo.InteractionCreate, guil
 ///
 func getGuildCount(s *discordgo.Session, interaction *discordgo.InteractionCreate) {
 	log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + "gc")
-	if guilds.HasDebugPermissions(interaction.Member.User.ID) {
-		sendInteractionRespond(s, interaction, query.GuildCount(guilds.GetGuildCount()), "")
-	}
+	sendInteractionRespond(s, interaction, query.GuildCount(guilds.GetGuildCount()), "")
 }
 
 ///
@@ -372,6 +370,8 @@ func getGuildDebugInfo(s *discordgo.Session, interaction *discordgo.InteractionC
 		} else {
 			sendInteractionRespond(s, interaction, query.GuildDebugInfo(guild), "")
 		}
+	} else {
+		sendInteractionRespond(s, interaction, query.ErrorCreate("Sorry, you don't have permission for this command"), "")
 	}
 }
 
