@@ -73,7 +73,7 @@ func patchNotesImgRegex(html []byte, version string) error {
 
 	subMatchSlice := imageRegExp.FindAllStringSubmatch(string(html), -1)
 	for _, imagesUrl := range subMatchSlice {
-		if strings.Contains(imagesUrl[1], "1920x1080") || strings.Contains(imagesUrl[1], "Infographic") {
+		if strings.Contains(imagesUrl[1], "1920x1080") || strings.Contains(imagesUrl[1], "Infographic") || strings.Contains(imagesUrl[1], "PatchNotes") {
 			resp2, err := http.Get(imagesUrl[1])
 			if err != nil {
 				log.Println("Unable to get patchnotes image URL" + err.Error())
