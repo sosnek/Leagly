@@ -8,7 +8,6 @@ import (
 	"os"
 	"os/signal"
 	"strconv"
-	"strings"
 	"syscall"
 	"time"
 
@@ -33,7 +32,7 @@ func ConnectToDiscord() {
 	}
 
 	Initialize()
-	leaglyBot.AddHandler(messageCreate)
+
 	leaglyBot.AddHandler(guildCreate)
 	leaglyBot.AddHandler(guildDelete)
 	leaglyBot.AddHandler(slashCommands)
@@ -174,51 +173,4 @@ func slashCommands(s *discordgo.Session, event *discordgo.InteractionCreate) {
 			patchNotes(s, event, "", guild)
 		}
 	}
-}
-
-func messageCreate(s *discordgo.Session, m *discordgo.MessageCreate) {
-
-	messageContent := m.Content
-
-	// ignore messages from bot himself
-	if m.Author.ID == s.State.User.ID {
-		return
-	}
-	//combine names with spaces
-	args := createName(strings.Fields(messageContent))
-	if len(args) < 1 {
-		return
-	}
-
-	if !containsValidCommand(messageContent) {
-		return //don't exhaust db search if message doesnt involve valid command
-	}
-
-	guild, err := guilds.View(guilds.DB, m.GuildID)
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	prefix := strings.ToLower(guild.Prefix)
-	command := strings.ToLower(args[0])
-
-	if len(command) < 2 {
-		return
-	}
-	pre := command[0:2]
-	if prefix == pre || pre == ">>" {
-		sendDiscordMessageComplex(s, m, &discordgo.MessageSend{
-			Content: "These commands have been deprecated. please use /help for a list of commands :)",
-		})
-	}
-}
-
-func containsValidCommand(msg string) bool {
-	roles := []string{"help", "region", "live", "lastmatch", "lookup", "mastery", "prefix", "uptime", "gc", "feedback", "status", "patchnotes", "who"}
-	for i := 0; i < len(roles); i++ {
-		if strings.Contains(msg, roles[i]) {
-			return true
-		}
-	}
-	return false
 }
