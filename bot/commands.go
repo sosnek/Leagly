@@ -18,7 +18,7 @@ func registerCommands(s *discordgo.Session) {
 		registerLookupCommand(s), registerMasteryCommand(s), registerUptimeCommand(s), registerGCCommand(s), registerWhoCommand(s),
 		registerFeedbackCommand(s), registerStatusCommand(s), registerPatchnotesCommand(s))
 
-	_, err := s.ApplicationCommandBulkOverwrite(s.State.User.ID, "930923025111580683", commands) //Dev ID 930923025111580683
+	_, err := s.ApplicationCommandBulkOverwrite(s.State.User.ID, "", commands) //Dev ID 930923025111580683
 
 	if err != nil {
 		panic("Could not register commands. " + err.Error())
@@ -423,21 +423,6 @@ func patchNotes(s *discordgo.Session, interaction *discordgo.InteractionCreate, 
 			sendInteractionRespond(s, interaction, &discordgo.MessageSend{}, "Auto patch notes have been disabled")
 		}
 		log.Println("Discord server ID: " + interaction.GuildID + " auto patchnotes have been set to " + strconv.FormatBool(guild.AutoPatchNotes))
-	}
-}
-
-///
-///This should also be removed with discords updated message intents
-func sendDiscordMessageComplex(s *discordgo.Session, m *discordgo.MessageCreate, send *discordgo.MessageSend) {
-	_, err := s.ChannelMessageSendComplex(m.ChannelID, send)
-	if err != nil {
-		log.Println("Error sending embed. Discord server ID: " + m.GuildID + "  " + err.Error())
-	}
-	//until aug 21, send one action items to discord servers asking to update permissions
-	_, err = s.GuildApplicationCommandsPermissions(s.State.User.ID, m.GuildID)
-	if err != nil {
-		s.ChannelMessageSendComplex(m.ChannelID, query.ApplicationCommandsWarningAction(m.GuildID))
-		log.Println("application.commands scope not enabled. Discord server ID: " + m.GuildID)
 	}
 }
 
