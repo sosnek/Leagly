@@ -399,6 +399,9 @@ func InitializedChampStruct() error {
 }
 
 func CreateChampionRatesFile() {
+	if _, err := os.Stat("championRoleRates/championrates.json"); err == nil {
+		return
+	}
 	resp, err := http.Get("https://cdn.merakianalytics.com/riot/lol/resources/latest/en-US/championrates.json")
 	if err != nil {
 		log.Println("Unable to get champion role data. Error: " + err.Error())
