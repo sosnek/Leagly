@@ -18,7 +18,7 @@ func registerCommands(s *discordgo.Session) {
 		registerLookupCommand(s), registerMasteryCommand(s), registerUptimeCommand(s), registerGCCommand(s), registerWhoCommand(s),
 		registerFeedbackCommand(s), registerStatusCommand(s), registerPatchnotesCommand(s))
 
-	_, err := s.ApplicationCommandBulkOverwrite(s.State.User.ID, "", commands) //Dev ID 930923025111580683
+	_, err := s.ApplicationCommandBulkOverwrite(s.State.User.ID, "930923025111580683", commands) //Dev ID 930923025111580683
 
 	if err != nil {
 		panic("Could not register commands. " + err.Error())
@@ -364,6 +364,7 @@ func getGuildCount(s *discordgo.Session, interaction *discordgo.InteractionCreat
 func getGuildDebugInfo(s *discordgo.Session, interaction *discordgo.InteractionCreate, guild string) {
 	log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + "who")
 	if guilds.HasDebugPermissions(interaction.Member.User.ID) {
+		s.UpdateListeningStatus("/help") //test
 		guild, err := guilds.View(guilds.DB, guild)
 		if err != nil {
 			log.Println(err)
@@ -426,7 +427,7 @@ func patchNotes(s *discordgo.Session, interaction *discordgo.InteractionCreate, 
 }
 
 ///
-///
+///This should also be removed with discords updated message intents
 func sendDiscordMessageComplex(s *discordgo.Session, m *discordgo.MessageCreate, send *discordgo.MessageSend) {
 	_, err := s.ChannelMessageSendComplex(m.ChannelID, send)
 	if err != nil {

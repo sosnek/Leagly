@@ -111,6 +111,11 @@ func formatHelpEmbed(embed *discordgo.MessageEmbed) *discordgo.MessageEmbed {
 			Value:  "Updates the region for your discord server",
 			Inline: false,
 		},
+		{
+			Name:   "\u200b",
+			Value:  "[Join Leagly Discord](https://discord.gg/bxQRKA8D9g)\n",
+			Inline: false,
+		},
 	}
 	return embed
 }
