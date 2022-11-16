@@ -33,8 +33,12 @@ func UpdateVersionAsync(s *discordgo.Session) {
 					log.Println("Error: Unable to get patchnotes " + err.Error())
 					return
 				}
+				time.Sleep(5000) //I think it's trying to send the patchnotes before the image has been saved. Lets try waiting 5 seconds.
 				for i := range guildsWithAutoUpdates {
-					s.ChannelMessageSendComplex(guildsWithAutoUpdates[i], send)
+					_, err := s.ChannelMessageSendComplex(guildsWithAutoUpdates[i], send)
+					if err != nil {
+						log.Println("Error while sending out patchnotes to " + guildsWithAutoUpdates[i] + ".  Error: " + err.Error())
+					}
 					log.Println("Sent patchnotes to: " + guildsWithAutoUpdates[i])
 				}
 			}
