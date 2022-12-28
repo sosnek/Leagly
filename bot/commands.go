@@ -248,64 +248,72 @@ func registerRegionCommand(s *discordgo.Session) *discordgo.ApplicationCommand {
 ///
 func live(s *discordgo.Session, interaction *discordgo.InteractionCreate, summoner string, guild guilds.DiscordGuild) {
 	sendInteractionRespond(s, interaction, &discordgo.MessageSend{}, "Please wait...")
-	log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + "live " + summoner)
+	start := time.Now()
 	if onCoolDown(interaction.Member.User.ID, 3) > 0 {
 		s.ChannelMessageSend(interaction.ChannelID, "You're currently on cooldown. Please wait a few seconds.")
 		log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " on cooldown")
 		return
 	}
 	send, err := query.IsInGame(summoner, guild.Region)
+	hasError := ". Error: null"
 	if err != nil {
-		log.Println("Error: Discord server ID: " + interaction.GuildID + "  " + err.Error())
+		hasError = " Error: " + err.Error()
 		//dont return because we still want to send an error embed
 	}
 	sendInteractionEdit(s, interaction.Interaction, send)
+	log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + "live " + summoner + ". execution time: " + time.Since(start).String() + hasError)
 }
 
 ///
 ///
 func lastmatch(s *discordgo.Session, interaction *discordgo.InteractionCreate, summoner string, guild guilds.DiscordGuild) {
 	sendInteractionRespond(s, interaction, &discordgo.MessageSend{}, "Please wait...")
-	log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + "lastmatch " + summoner)
+	start := time.Now()
 	send, err := query.GetLastMatch(summoner, guild.Region, guild.Region2)
+	hasError := ". Error: null"
 	if err != nil {
-		log.Println("Error: Discord server ID: " + interaction.GuildID + "  " + err.Error())
+		hasError = " Error: " + err.Error()
 	}
 	sendInteractionEdit(s, interaction.Interaction, send)
+	log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + "lastmatch " + summoner + ". execution time: " + time.Since(start).String() + hasError)
 }
 
 ///
 ///
 func lookup(s *discordgo.Session, interaction *discordgo.InteractionCreate, summoner string, guild guilds.DiscordGuild) {
 	sendInteractionRespond(s, interaction, &discordgo.MessageSend{}, "Please wait...")
-	log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + "lookup " + summoner)
+	start := time.Now()
 	if onCoolDown(interaction.Member.User.ID, 5) > 0 {
 		s.ChannelMessageSend(interaction.ChannelID, "You're currently on cooldown. Please wait a few seconds.")
 		log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " on cooldown")
 		return
 	}
 	send, err := query.LookupPlayer(summoner, guild.Region, guild.Region2)
+	hasError := ". Error: null"
 	if err != nil {
-		log.Println("Error: Discord server ID: " + interaction.GuildID + "  " + err.Error())
+		hasError = " Error: " + err.Error()
 	}
 	sendInteractionEdit(s, interaction.Interaction, send)
+	log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + "lookup " + summoner + ". execution time: " + time.Since(start).String() + hasError)
 }
 
 ///
 ///
 func mastery(s *discordgo.Session, interaction *discordgo.InteractionCreate, summoner string, guild guilds.DiscordGuild) {
 	sendInteractionRespond(s, interaction, &discordgo.MessageSend{}, "Please wait...")
-	log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + "mastery " + summoner)
+	start := time.Now()
 	if onCoolDown(interaction.Member.User.ID, 3) > 0 {
 		s.ChannelMessageSend(interaction.ChannelID, "You're currently on cooldown. Please wait a few seconds.")
 		log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " on cooldown")
 		return
 	}
 	send, err := query.MasteryPlayer(summoner, guild.Region)
+	hasError := ". Error: null"
 	if err != nil {
-		log.Println("Error: Discord server ID: " + interaction.GuildID + "  " + err.Error())
+		hasError = " Error: " + err.Error()
 	}
 	sendInteractionEdit(s, interaction.Interaction, send)
+	log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + "mastery " + summoner + ". execution time: " + time.Since(start).String() + hasError)
 }
 
 ///
@@ -446,7 +454,6 @@ func sendInteractionRespond(s *discordgo.Session, interaction *discordgo.Interac
 		if err != nil {
 			log.Println("Uh Oh! Error sending interaction follow-up: Discord server ID: " + interaction.GuildID + "  " + err.Error())
 		}
-		return
 	}
 }
 
@@ -468,7 +475,6 @@ func sendInteractionEdit(s *discordgo.Session, interaction *discordgo.Interactio
 		if err != nil {
 			log.Println("Uh Oh! Error sending interaction follow-up: Discord server ID: " + interaction.GuildID + "  " + err.Error())
 		}
-		return
 	}
 }
 

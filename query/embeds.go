@@ -319,11 +319,8 @@ func formatPlayerLookupEmbedFields(embed *discordgo.MessageEmbed, playerMatchSta
 		totalAssist += playerMatchStats.PlayerChampions[k].Assists
 	}
 
-	// colourCypher := "css"
 	winRate := (totalWins * 100) / (totalWins + totalLoss)
-	// if winRate < 50 {
-	// 	colourCypher = "diff "
-	// }
+
 	pickRate1, pickRate2 := getRole(playerMatchStats)
 	KDA := fmt.Sprintf("```%dG %dW %dL (%d%%)\t \t %.1f / %.1f / %.1f KDA```", totalWins+totalLoss, totalWins, totalLoss, winRate,
 		float64(totalkills/(totalWins+totalLoss)), float64(totalDeaths/(totalWins+totalLoss)), float64(totalAssist/(totalWins+totalLoss)))
@@ -399,6 +396,9 @@ func formatRankedEmbed(playerName string, fileName string, description string, c
 		Description: description,
 		Thumbnail: &discordgo.MessageEmbedThumbnail{
 			URL: "attachment://" + fileName,
+		},
+		Footer: &discordgo.MessageEmbedFooter{
+			Text: "Please share Leagly if you enjoy the app!",
 		},
 		Timestamp: times.Format(time.RFC3339),
 	}
