@@ -244,8 +244,8 @@ func registerRegionCommand(s *discordgo.Session) *discordgo.ApplicationCommand {
 
 // Command registration end
 
-///
-///
+// /
+// /
 func live(s *discordgo.Session, interaction *discordgo.InteractionCreate, summoner string, guild guilds.DiscordGuild) {
 	sendInteractionRespond(s, interaction, &discordgo.MessageSend{}, "Please wait...")
 	start := time.Now()
@@ -264,8 +264,8 @@ func live(s *discordgo.Session, interaction *discordgo.InteractionCreate, summon
 	log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + "live " + summoner + ". execution time: " + time.Since(start).String() + hasError)
 }
 
-///
-///
+// /
+// /
 func lastmatch(s *discordgo.Session, interaction *discordgo.InteractionCreate, summoner string, guild guilds.DiscordGuild) {
 	sendInteractionRespond(s, interaction, &discordgo.MessageSend{}, "Please wait...")
 	start := time.Now()
@@ -278,8 +278,8 @@ func lastmatch(s *discordgo.Session, interaction *discordgo.InteractionCreate, s
 	log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + "lastmatch " + summoner + ". execution time: " + time.Since(start).String() + hasError)
 }
 
-///
-///
+// /
+// /
 func lookup(s *discordgo.Session, interaction *discordgo.InteractionCreate, summoner string, guild guilds.DiscordGuild) {
 	sendInteractionRespond(s, interaction, &discordgo.MessageSend{}, "Please wait...")
 	start := time.Now()
@@ -297,8 +297,8 @@ func lookup(s *discordgo.Session, interaction *discordgo.InteractionCreate, summ
 	log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + "lookup " + summoner + ". execution time: " + time.Since(start).String() + hasError)
 }
 
-///
-///
+// /
+// /
 func mastery(s *discordgo.Session, interaction *discordgo.InteractionCreate, summoner string, guild guilds.DiscordGuild) {
 	sendInteractionRespond(s, interaction, &discordgo.MessageSend{}, "Please wait...")
 	start := time.Now()
@@ -316,15 +316,15 @@ func mastery(s *discordgo.Session, interaction *discordgo.InteractionCreate, sum
 	log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + "mastery " + summoner + ". execution time: " + time.Since(start).String() + hasError)
 }
 
-///
-///
+// /
+// /
 func handleHelp(s *discordgo.Session, interaction *discordgo.InteractionCreate, guild guilds.DiscordGuild) {
 	log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + "help")
 	sendInteractionRespond(s, interaction, query.Help(guild.Region), "")
 }
 
-///
-///
+// /
+// /
 func changeRegion(s *discordgo.Session, interaction *discordgo.InteractionCreate, region string, guild guilds.DiscordGuild) {
 	log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + "region " + region)
 	if guild.ID == interaction.GuildID {
@@ -346,34 +346,40 @@ func changeRegion(s *discordgo.Session, interaction *discordgo.InteractionCreate
 	}
 }
 
-///
-///
+// /
+// /
 func uptime(s *discordgo.Session, interaction *discordgo.InteractionCreate, guild guilds.DiscordGuild) {
 	log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + "uptime")
 	sendInteractionRespond(s, interaction, query.UpTime(up_time), "")
 }
 
-///
-///
+// /
+// /
 func status(s *discordgo.Session, interaction *discordgo.InteractionCreate, guild guilds.DiscordGuild) {
 	log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + "status")
 	sendInteractionRespond(s, interaction, query.RiotApiStatus(guild.Region), "")
 }
 
-///
-///
+// /
+// /
 func getGuildCount(s *discordgo.Session, interaction *discordgo.InteractionCreate) {
 	log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + "gc")
 	sendInteractionRespond(s, interaction, query.GuildCount(guilds.GetGuildCount()), "")
 }
 
-///
-///
-func getGuildDebugInfo(s *discordgo.Session, interaction *discordgo.InteractionCreate, guild string) {
+// /
+// /
+func getGuildDebugInfo(s *discordgo.Session, interaction *discordgo.InteractionCreate, guildId string) {
 	log.Println("Discord server ID: " + interaction.GuildID + "  " + interaction.Member.User.Username + " : " + "who")
 	if guilds.HasDebugPermissions(interaction.Member.User.ID) {
-		s.UpdateListeningStatus("/help") //test
-		guild, err := guilds.View(guilds.DB, guild)
+		guild, err := guilds.View(guilds.DB, guildId)
+		var ch *discordgo.Channel
+		if err != nil {
+			ch, err = s.Channel(guildId)
+			if err == nil {
+				guild, err = guilds.View(guilds.DB, ch.GuildID)
+			}
+		}
 		if err != nil {
 			log.Println(err)
 		} else {
@@ -384,8 +390,8 @@ func getGuildDebugInfo(s *discordgo.Session, interaction *discordgo.InteractionC
 	}
 }
 
-///
-///
+// /
+// /
 func feedback(s *discordgo.Session, interaction *discordgo.InteractionCreate, feedback string, guild guilds.DiscordGuild) {
 	if onCoolDown(interaction.Member.User.ID, 30) > 0 {
 		sendInteractionRespond(s, interaction, &discordgo.MessageSend{}, "You're currently on cooldown. Please wait a few seconds.")
@@ -403,8 +409,8 @@ func feedback(s *discordgo.Session, interaction *discordgo.InteractionCreate, fe
 	}
 }
 
-///
-///
+// /
+// /
 func patchNotes(s *discordgo.Session, interaction *discordgo.InteractionCreate, toggle string, guild guilds.DiscordGuild) {
 	if toggle == "" {
 		s.ChannelTyping(interaction.ChannelID)
@@ -434,8 +440,8 @@ func patchNotes(s *discordgo.Session, interaction *discordgo.InteractionCreate, 
 	}
 }
 
-///
-///
+// /
+// /
 func sendInteractionRespond(s *discordgo.Session, interaction *discordgo.InteractionCreate, send *discordgo.MessageSend, content string) {
 	err := s.InteractionRespond(interaction.Interaction, &discordgo.InteractionResponse{
 		Type: discordgo.InteractionResponseChannelMessageWithSource,
@@ -457,8 +463,8 @@ func sendInteractionRespond(s *discordgo.Session, interaction *discordgo.Interac
 	}
 }
 
-///
-///
+// /
+// /
 func sendInteractionEdit(s *discordgo.Session, interaction *discordgo.Interaction, send *discordgo.MessageSend) {
 	str := "Done!"
 	contentPtr := &str
@@ -478,8 +484,8 @@ func sendInteractionEdit(s *discordgo.Session, interaction *discordgo.Interactio
 	}
 }
 
-///
-///
+// /
+// /
 func onCoolDown(user string, cd float64) float64 {
 	for i := range discordUser {
 		if discordUser[i].ID == user {
@@ -497,8 +503,8 @@ func onCoolDown(user string, cd float64) float64 {
 	return 0
 }
 
-///Some summoner names can have spaces in them
-/// This method will combine each name piece into a whole string
+// /Some summoner names can have spaces in them
+// / This method will combine each name piece into a whole string
 func createName(args []string) []string {
 	for n := 2; n < len(args); n++ {
 		args[1] += " " + args[n]

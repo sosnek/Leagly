@@ -91,7 +91,7 @@ func Delete(db *bolt.DB, key string) error {
 	return err
 }
 
-func GuildsWithAutoPatchNotes() []string {
+func ChannelsWithAutoPatchNotes() []string {
 	var patchNoteChannels []string
 	DB.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte("Guilds"))

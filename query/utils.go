@@ -25,21 +25,22 @@ func UpdateVersionAsync(s *discordgo.Session) {
 		select {
 		case <-uptimeTicker.C:
 			newVersion := GetLeagueVersion()
+			s.UpdateListeningStatus("/help")
 			if newVersion != Version {
 				Version = newVersion
-				guildsWithAutoUpdates := guilds.GuildsWithAutoPatchNotes()
+				channelsWithAutoUpdates := guilds.ChannelsWithAutoPatchNotes()
 				send, err := PatchNotes()
 				if err != nil {
 					log.Println("Error: Unable to get patchnotes " + err.Error())
 					return
 				}
 				time.Sleep(5000) //I think it's trying to send the patchnotes before the image has been saved. Lets try waiting 5 seconds.
-				for i := range guildsWithAutoUpdates {
-					_, err := s.ChannelMessageSendComplex(guildsWithAutoUpdates[i], send)
+				for i := range channelsWithAutoUpdates {
+					_, err := s.ChannelMessageSendComplex(channelsWithAutoUpdates[i], send)
 					if err != nil {
-						log.Println("Error while sending out patchnotes to " + guildsWithAutoUpdates[i] + ".  Error: " + err.Error())
+						log.Println("Error while sending out patchnotes to " + channelsWithAutoUpdates[i] + ".  Error: " + err.Error())
 					}
-					log.Println("Sent patchnotes to: " + guildsWithAutoUpdates[i])
+					log.Println("Sent patchnotes to channel ID: " + channelsWithAutoUpdates[i])
 				}
 			}
 		}
@@ -105,7 +106,7 @@ func patchNotesImgRegex(html []byte, version string) error {
 	return nil
 }
 
-///
+// /
 func InitializeEmojis(s *discordgo.Session) {
 	var emoji [][]*discordgo.Emoji
 	emoji1, _ := s.GuildEmojis("937465588446539920")
